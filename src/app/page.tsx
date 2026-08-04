@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Montserrat } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next"
 
 // Importação dos Componentes Modulares
 import SecaoBanner from "@/components/SecaoBanner";

@@ -73,7 +73,7 @@ export default function SecaoMobilidadeUrbana() {
         <div className="text-center mb-10">
           <h2 className="text-[#FFBA00] text-xl md:text-3xl lg:text-4xl font-normal uppercase drop-shadow-md">
             Mobilidade urbana e uma<br className="hidden md:block" />
-            <span className="font-bold"> <br/>completa infraestrutura<br/>ao seu dispor.</span>
+            <span className="font-bold"> completa infraestrutura ao seu dispor.</span>
           </h2>
         </div>
 

@@ -1,13 +1,22 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
 
 export default function SecaoContato() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
   const recaptchaRef = useRef<ReCAPTCHA>(null);
+
+  // Evita erro de hidratação e garante que o Recaptcha só renderize no cliente
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Adicionado o fallback direto com a sua chave pública para garantir que nunca seja undefined
+  const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "6LewTnUtAAAAAH9QVex9YkUw94NJY1hmL0e5WjSy";
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -54,7 +63,7 @@ export default function SecaoContato() {
         <div className="relative bg-gradient-to-b from-[#FFBA00] via-[#FFBA00] via-40% to-[#87CEEB] to-90% lg:bg-gradient-to-r lg:from-[#87CEEB] lg:from-10% lg:via-[#FF9E00] lg:via-50% lg:to-[#FFBA00] lg:to-90% rounded-[2.5rem] shadow-xl flex flex-col lg:flex-row items-stretch justify-between lg:mt-1 overflow-visible">
           
           <div className="w-full lg:w-6/12 flex flex-col justify-center p-6 pb-2 sm:p-10 sm:pb-4 lg:p-12 xl:pr-16 xl:pl-8 z-10 order-1 lg:order-2">
-            <h3 className="font-medium text-[#4A137B] text-xl sm:text-2xl lg:text-3xl uppercase leading-tight mb-6 drop-shadow-sm text-center lg:text-left text-balance">
+            <h3 className="font-medium text-[#4A137B] text-[22px] sm:text-2xl lg:text-3xl uppercase leading-[1.2] mb-6 drop-shadow-sm text-left lg:text-left text-balance break-words">
               CADASTRE-SE E RECEBA EM 1ª MÃO TODAS AS INFORMAÇÕES:
             </h3>
 
@@ -120,19 +129,21 @@ export default function SecaoContato() {
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-                  <div className="w-full sm:w-auto bg-white p-1 rounded-lg shadow-sm flex justify-center overflow-hidden">
-                    <ReCAPTCHA
-                      ref={recaptchaRef}
-                      sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
-                      onChange={(token) => setCaptchaToken(token)}
-                      hl="pt-BR"
-                    />
+                  <div className="w-full sm:w-auto flex justify-center min-h-[78px] min-w-[304px]">
+                    {isMounted && (
+                      <ReCAPTCHA
+                        ref={recaptchaRef}
+                        sitekey={SITE_KEY}
+                        onChange={(token) => setCaptchaToken(token)}
+                        hl="pt-BR"
+                      />
+                    )}
                   </div>
 
                   <button 
                     type="submit" 
                     disabled={status === "loading"}
-                    className="w-full sm:w-auto bg-[#7629BB] hover:bg-[#4A137B] disabled:bg-gray-400 disabled:cursor-not-allowed text-[#FFFFFF] font-black text-base uppercase tracking-widest px-12 py-4 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl active:scale-95"
+                    className="w-full sm:w-auto bg-[#7629BB] hover:bg-[#4A137B] disabled:bg-gray-400 disabled:cursor-not-allowed text-[#FFFFFF] font-black text-base uppercase tracking-widest px-12 py-4 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl active:scale-95 h-[78px]"
                   >
                     {status === "loading" ? "ENVIANDO..." : "ENVIAR"}
                   </button>
