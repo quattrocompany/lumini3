@@ -68,7 +68,7 @@ export default function SecaoImplantacao() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-stretch">
           
           {/* Desktop Map */}
-          <div className="lg:col-span-7 relative w-full items-center justify-center lg:justify-start lg:-mt-24 lg:-mb-24 z-10 hidden lg:flex">
+          <div className="lg:col-span-7 relative w-full items-center justify-center lg:justify-start lg:-mt-12 lg:-mb-24 z-10 hidden lg:flex">
             <a 
               href="/img/implantacao.jpg" 
               target="_blank" 

@@ -60,7 +60,7 @@ export default function SecaoLazer() {
       <div className="max-w-[1440px] mx-auto px-6 md:px-12 relative z-10">
         
         <div className="text-center mb-10 md:mb-14">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl uppercase tracking-wide leading-tight">
+          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl uppercase tracking-wide leading-tight">
             <span className="font-regular text-[#FFBA00] block mb-1">
               LAZER E DIVERSÃO A QUALQUER HORA
             </span>
