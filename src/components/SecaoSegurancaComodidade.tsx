@@ -37,7 +37,7 @@ export default function SecaoSegurancaComodidade() {
         <div className="text-center mb-10 md:mb-14">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl uppercase tracking-tight leading-tight">
             <span className="font-bold text-[#4A137B]">
-              SEGURANÇA E COMODIDADE{" "}
+              SEGURANÇA E COMODIDADE{" "}<br />
             </span>
             <span className="font-regular text-[#FFBA00]">
               PARA O SEU DIA A DIA.
