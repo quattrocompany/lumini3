@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 
-export default function Footer() {
+export default function Footer({ onOpenWhatsapp }: { onOpenWhatsapp?: () => void }) {
   const [showStickyBar, setShowStickyBar] = useState(false);
 
   useEffect(() => {
@@ -20,6 +20,17 @@ export default function Footer() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Lógica restaurada para ABRIR O MODAL DE CADASTRO antes do WhatsApp
+  const handleWhatsappClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onOpenWhatsapp) {
+      onOpenWhatsapp();
+    } else {
+      // Dispara o evento customizado para abrir o Modal (onde está o formulário)
+      window.dispatchEvent(new CustomEvent("openWhatsAppModal"));
+    }
+  };
+
   return (
     <>
       <footer className="bg-white pt-12 pb-32 md:pb-40 relative z-10 w-full overflow-hidden">
@@ -27,13 +38,13 @@ export default function Footer() {
           
           {/* Logos de Parcerias */}
           <div className="border-t border-gray-200 border-b py-10 mb-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-end justify-items-center text-center">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-y-10 gap-x-6 items-start justify-items-center text-center">
               
-              <div className="flex flex-col items-center gap-4">
-                <span className="text-[10px] sm:text-xs text-gray-600 font-medium uppercase tracking-wider">
+              <div className="flex flex-col items-center justify-start w-full">
+                <span className="text-[9px] sm:text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-3">
                   INTERMEDIAÇÃO:
                 </span>
-                <div className="relative w-32 h-12 sm:w-40 sm:h-16">
+                <div className="relative w-full max-w-[140px] sm:max-w-[180px] h-16 sm:h-24">
                   <Image 
                     src="/img/logo-direcoes.png" 
                     alt="Direções Imobiliária" 
@@ -43,11 +54,11 @@ export default function Footer() {
                 </div>
               </div>
 
-              <div className="flex flex-col items-center gap-4">
-                <span className="text-[10px] sm:text-xs text-gray-600 font-medium uppercase tracking-wider">
+              <div className="flex flex-col items-center justify-start w-full">
+                <span className="text-[9px] sm:text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-3">
                   FINANCIAMENTO:
                 </span>
-                <div className="relative w-28 h-10 sm:w-36 sm:h-12">
+                <div className="relative w-full max-w-[120px] sm:max-w-[160px] h-16 sm:h-24">
                   <Image 
                     src="/img/logo-caixa.png" 
                     alt="CAIXA" 
@@ -57,11 +68,11 @@ export default function Footer() {
                 </div>
               </div>
 
-              <div className="flex flex-col items-center gap-4">
-                <span className="text-[10px] sm:text-xs text-gray-600 font-medium uppercase tracking-wider">
+              <div className="flex flex-col items-center justify-start w-full">
+                <span className="text-[9px] sm:text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-3">
                   CONSTRUÇÃO:
                 </span>
-                <div className="relative w-24 h-24 sm:w-28 sm:h-28">
+                <div className="relative w-full max-w-[110px] sm:max-w-[130px] h-16 sm:h-24">
                   <Image 
                     src="/img/logo-quattro-construtora.png" 
                     alt="Quattro Construtora" 
@@ -71,11 +82,11 @@ export default function Footer() {
                 </div>
               </div>
 
-              <div className="flex flex-col items-center gap-4">
-                <span className="text-[10px] sm:text-xs text-gray-600 font-medium uppercase tracking-wider">
+              <div className="flex flex-col items-center justify-start w-full">
+                <span className="text-[9px] sm:text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-3">
                   INCORPORAÇÃO:
                 </span>
-                <div className="relative w-32 h-10 sm:w-40 sm:h-12">
+                <div className="relative w-full max-w-[140px] sm:max-w-[180px] h-16 sm:h-24">
                   <Image 
                     src="/img/logo-quattro-inc.png" 
                     alt="Quattro Inc" 
@@ -90,14 +101,14 @@ export default function Footer() {
 
           {/* Disclaimer Legal */}
           <div className="mb-8">
-            <p className="text-[10px] sm:text-xs text-gray-400 text-justify leading-relaxed font-normal">
+            <p className="text-[10px] sm:text-[11px] text-gray-400 text-justify leading-relaxed font-normal">
               R.I. no R.14, Matrícula N°23.286 no C.R.I. de Carapicuíba em 04/09/2025. *Valor referente a unidade N°4, pavimento térreo da Torre C, de 2 dorms., sem vaga, com 34,60m². A inclusão no Programa Minha Casa Minha vida está vinculada ao enquadramento de renda e regras do Programa, à época da assinatura do contrato de financiamento. Apesar de todo cuidado na obtenção das informações contidas neste material, elas não devem ser consideradas como parte integrante de qualquer contrato. As áreas de lazer serão entregues equipadas e decoradas de acordo com o memorial descritivo. As ilustrações, artes, fotos, mobiliário, vegetação e peças de decoração dos materiais de divulgação têm caráter exclusivamente promocional por tratar-se de bem a ser construído, sendo que as condições de comercialização projetos e especificações são aquelas dos contratos e memoriais a serem firmados com os adquirentes. A vegetação será entregue em diferentes tamanhos e portes. Fotos ilustrativas. Perspectivas artísticas. O empreendimento localiza-se na Rua Heitor de Oliveira, 80 – Vila Sul Americana/ Carapicuíba.
             </p>
           </div>
 
           {/* Copyright e Links */}
           <div className="border-t border-gray-200 pt-6 text-center">
-            <p className="text-xs sm:text-sm text-gray-400 font-medium">
+            <p className="text-[11px] sm:text-xs text-gray-400 font-medium">
               © 2026 | Lumini 3 | <a href="#termos" className="font-bold hover:text-[#7629BB] transition-colors">Termos de Uso</a> e <a href="#privacidade" className="font-bold hover:text-[#7629BB] transition-colors">Política de Privacidade</a>
             </p>
           </div>
@@ -107,9 +118,8 @@ export default function Footer() {
 
       {/* Ícone Flutuante do WhatsApp (Verde) */}
       <a 
-        href="https://api.whatsapp.com/send?phone=551141644000"
-        target="_blank"
-        rel="noopener noreferrer"
+        href="#whatsapp"
+        onClick={handleWhatsappClick}
         className={`fixed right-4 sm:right-8 z-[60] transition-all duration-500 hover:scale-110 ${showStickyBar ? "bottom-[90px] md:bottom-[100px] opacity-100" : "-bottom-20 opacity-0 pointer-events-none"}`}
         aria-label="Fale pelo WhatsApp"
       >
@@ -139,9 +149,8 @@ export default function Footer() {
           </a>
 
           <a 
-            href="https://api.whatsapp.com/send?phone=551141644000" 
-            target="_blank"
-            rel="noopener noreferrer"
+            href="#whatsapp"
+            onClick={handleWhatsappClick}
             className="flex-1 flex items-center justify-center gap-3 text-white hover:bg-white/10 transition-colors py-4 md:py-0 group px-2"
           >
             <svg className="w-6 h-6 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor">

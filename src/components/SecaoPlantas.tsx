@@ -111,10 +111,10 @@ export default function SecaoPlantas() {
   }, [lightboxIndex]);
 
   return (
-    <section id="plantas" className="bg-white relative py-10 md:py-5">
+    // AJUSTE AQUI: Trocado py-10 md:py-5 por pt-0 pb-10 md:pb-5 para remover o espaço superior
+    <section id="plantas" className="bg-white relative pt-0 pb-10 md:pb-5">
       
-      <div className="relative bg-gradient-to-r from-[#FFBA00] via-[#FF9E00] to-[#F77A2C] py-8 md:py-12 overflow-hidden mb-8 md:mb-12">
-        
+<div className="relative -mt-[20px] bg-gradient-to-r from-[#FFBA00] via-[#FF9E00] to-[#F77A2C] py-8 md:py-12 overflow-hidden mb-8 md:mb-12">        
         <div className="max-w-[1440px] mx-auto px-6 md:px-12 relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
           
           <div className="text-center md:text-left pl-0 md:pl-16">

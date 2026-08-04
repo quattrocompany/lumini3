@@ -32,12 +32,12 @@ export default function Home() {
   
   const [formData, setFormData] = useState({ name: '', email: '', whatsapp: '' });
 
+  // Escuta o Scroll para o Header e Navegação Ativa
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 30);
       setShowStickyBar(window.scrollY > 500);
 
-      // Ordem exata dos blocos na tela para garantir o scroll spy perfeito
       const domOrder = ["home", "contato", "produto", "lazer", "plantas", "localizacao", "realizacao"];
       let currentSection = "home";
 
@@ -45,7 +45,6 @@ export default function Home() {
         const element = document.getElementById(`nav-${name}`);
         if (element) {
           const rect = element.getBoundingClientRect();
-          // Offset de 200px para considerar a barra de navegação fixa
           if (rect.top <= 200) {
             currentSection = name;
           }
@@ -59,13 +58,20 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Função para smooth scroll ajustando a altura do header
+  // NOVO: Ouvinte global para abrir o modal via Evento Customizado
+  useEffect(() => {
+    const handleOpenWhatsappModal = () => openModal("whatsapp");
+    window.addEventListener("openWhatsAppModal", handleOpenWhatsappModal);
+    
+    return () => window.removeEventListener("openWhatsAppModal", handleOpenWhatsappModal);
+  }, []);
+
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
     e.preventDefault();
     const element = document.getElementById(`nav-${sectionId}`);
     
     if (element) {
-      const y = element.getBoundingClientRect().top + window.scrollY - 100; // 100px compensa o header fixo
+      const y = element.getBoundingClientRect().top + window.scrollY - 100;
       window.scrollTo({ top: y, behavior: 'smooth' });
     }
     
@@ -218,7 +224,8 @@ export default function Home() {
       </div>
 
       <div id="nav-realizacao">
-        <Footer />
+        {/* Passamos a função openModal como propriedade para o Footer */}
+        <Footer onOpenWhatsapp={() => openModal("whatsapp")} />
       </div>
 
       {/* ================= MODAIS ================= */}
