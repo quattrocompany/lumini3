@@ -28,7 +28,7 @@ export default function CookieBanner() {
         <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 py-4 animate-in slide-in-from-bottom-full duration-500">
           <div className="max-w-[1440px] mx-auto px-4 md:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm text-gray-600 text-center sm:text-left flex-1">
-              Olá 🍪 Usamos tecnologias para garantir que você obtenha a melhor experiência em nosso site.{" "}
+              Olá 🍪 Usamos cookies para garantir que você obtenha a melhor experiência em nosso site.{" "}
               <button
                 onClick={() => setIsModalOpen(true)}
                 className="text-[#4A137B] font-bold hover:underline ml-1 focus:outline-none"

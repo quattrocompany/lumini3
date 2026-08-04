@@ -36,10 +36,10 @@ export default function SecaoSegurancaComodidade() {
         {/* ================= CABEÇALHO FORMATADO ================= */}
         <div className="text-center mb-10 md:mb-14">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl uppercase tracking-tight leading-tight">
-            <span className="font-black text-[#4A137B]">
+            <span className="font-bold text-[#4A137B]">
               SEGURANÇA E COMODIDADE{" "}
             </span>
-            <span className="font-bold text-[#FFBA00]">
+            <span className="font-regular text-[#FFBA00]">
               PARA O SEU DIA A DIA.
             </span>
           </h2>
