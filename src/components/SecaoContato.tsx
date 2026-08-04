@@ -64,7 +64,7 @@ export default function SecaoContato() {
           
           <div className="w-full lg:w-6/12 flex flex-col justify-center p-6 pb-2 sm:p-10 sm:pb-4 lg:p-12 xl:pr-16 xl:pl-8 z-10 order-1 lg:order-2">
             <h3 className="font-medium text-[#4A137B] text-[22px] sm:text-2xl lg:text-3xl uppercase leading-[1.2] mb-6 drop-shadow-sm text-left lg:text-left text-balance break-words">
-              CADASTRE-SE E RECEBA EM 1ª MÃO TODAS AS INFORMAÇÕES:
+              CADASTRE-SE E RECEBA EM PRIMEIRA MÃO TODAS AS INFORMAÇÕES:
             </h3>
 
             {status === "success" ? (
