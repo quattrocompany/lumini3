@@ -40,34 +40,22 @@ export default function Footer({ onOpenWhatsapp }: { onOpenWhatsapp?: () => void
           <div className="border-t border-gray-200 border-b py-10 mb-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-y-10 gap-x-6 items-start justify-items-center text-center">
               
+              {/* 1. INCORPORAÇÃO (Quattro Inc) */}
               <div className="flex flex-col items-center justify-start w-full">
                 <span className="text-[9px] sm:text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-3">
-                  INTERMEDIAÇÃO:
+                  INCORPORAÇÃO:
                 </span>
                 <div className="relative w-full max-w-[140px] sm:max-w-[180px] h-16 sm:h-24">
                   <Image 
-                    src="/img/logo-direcoes.png" 
-                    alt="Direções Imobiliária" 
+                    src="/img/logo-quattro-inc.png" 
+                    alt="Quattro Inc" 
                     fill 
                     className="object-contain" 
                   />
                 </div>
               </div>
 
-              <div className="flex flex-col items-center justify-start w-full">
-                <span className="text-[9px] sm:text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-3">
-                  FINANCIAMENTO:
-                </span>
-                <div className="relative w-full max-w-[120px] sm:max-w-[160px] h-16 sm:h-24">
-                  <Image 
-                    src="/img/logo-caixa.png" 
-                    alt="CAIXA" 
-                    fill 
-                    className="object-contain" 
-                  />
-                </div>
-              </div>
-
+              {/* 2. CONSTRUÇÃO (Quattro Construtora) */}
               <div className="flex flex-col items-center justify-start w-full">
                 <span className="text-[9px] sm:text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-3">
                   CONSTRUÇÃO:
@@ -82,14 +70,30 @@ export default function Footer({ onOpenWhatsapp }: { onOpenWhatsapp?: () => void
                 </div>
               </div>
 
+              {/* 3. INTERMEDIAÇÃO (Direções) */}
               <div className="flex flex-col items-center justify-start w-full">
                 <span className="text-[9px] sm:text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-3">
-                  INCORPORAÇÃO:
+                  INTERMEDIAÇÃO:
                 </span>
                 <div className="relative w-full max-w-[140px] sm:max-w-[180px] h-16 sm:h-24">
                   <Image 
-                    src="/img/logo-quattro-inc.png" 
-                    alt="Quattro Inc" 
+                    src="/img/logo-direcoes.png" 
+                    alt="Direções Imobiliária" 
+                    fill 
+                    className="object-contain" 
+                  />
+                </div>
+              </div>
+
+              {/* 4. FINANCIAMENTO (Caixa) */}
+              <div className="flex flex-col items-center justify-start w-full">
+                <span className="text-[9px] sm:text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-3">
+                  FINANCIAMENTO:
+                </span>
+                <div className="relative w-full max-w-[120px] sm:max-w-[160px] h-16 sm:h-24">
+                  <Image 
+                    src="/img/logo-caixa.png" 
+                    alt="CAIXA" 
                     fill 
                     className="object-contain" 
                   />
