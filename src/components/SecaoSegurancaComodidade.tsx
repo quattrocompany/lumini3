@@ -29,17 +29,17 @@ const galleryImages: GalleryItem[] = [
 
 export default function SecaoSegurancaComodidade() {
   return (
-    <section id="produto" className="py-16 md:py-24 bg-white relative">
+    <section id="seguranca" className="py-16 md:py-24 bg-white relative overflow-hidden">
       {/* Container Mestre Padronizado (1440px) */}
       <div className="max-w-[1440px] mx-auto px-6 md:px-12">
         
         {/* ================= CABEÇALHO FORMATADO ================= */}
-        <div className="text-center mb-10 md:mb-14">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl uppercase tracking-tight leading-tight">
+        <div className="text-center mb-10 md:mb-14 w-full">
+          <h2 className="text-2xl sm:text-3xl md:text-[32px] lg:text-[40px] uppercase tracking-tight leading-tight text-balance break-words mx-auto">
             <span className="font-bold text-[#4A137B]">
-              SEGURANÇA E COMODIDADE{" "}<br />
+              SEGURANÇA E COMODIDADE{" "}
             </span>
-            <span className="font-regular text-[#FFBA00]">
+            <span className="font-regular text-[#FFBA00] block sm:inline mt-1 sm:mt-0">
               PARA O SEU DIA A DIA.
             </span>
           </h2>
