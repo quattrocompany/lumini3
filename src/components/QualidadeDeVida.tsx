@@ -133,7 +133,7 @@ export default function SecaoQualidadeDeVida() {
             <h2 className="text-[#FFBA00] font-regular text-2xl sm:text-3xl lg:text-4xl uppercase tracking-wide mb-1">
               QUALIDADE DE VIDA
             </h2>
-            <h3 className="text-[#FFBA00] font-black text-3xl sm:text-4xl lg:text-5xl uppercase tracking-wide mb-6">
+            <h3 className="text-[#FFBA00] font-bold text-2xl sm:text-3xl lg:text-4xl uppercase tracking-wide mb-6">
               EM UM PROJETO EXCLUSIVO.
             </h3>
 

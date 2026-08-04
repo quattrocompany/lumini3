@@ -64,7 +64,7 @@ export default function SecaoLazer() {
             <span className="font-regular text-[#FFBA00] block mb-1">
               LAZER E DIVERSÃO A QUALQUER HORA
             </span>
-            <span className="font-black text-[#fffffe] block">
+            <span className="font-bold text-[#fffffe] block">
               PARA TODOS OS<br/>GOSTOS E IDADES.
             </span>
           </h2>
@@ -82,7 +82,7 @@ export default function SecaoLazer() {
             aria-label="Slide anterior"
             className="absolute left-0 sm:left-2 md:left-4 top-1/2 -translate-y-1/2 z-30 p-2 text-[#FFBA00] hover:text-white transition-all hover:scale-125 focus:outline-none"
           >
-            <span className="text-3xl sm:text-4xl md:text-5xl font-black select-none">&lt;</span>
+            <span className="text-2xl sm:text-3xl md:text-4xl font-black select-none">&lt;</span>
           </button>
 
           <div className="w-full flex flex-col items-center">
