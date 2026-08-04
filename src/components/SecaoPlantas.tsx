@@ -119,10 +119,10 @@ export default function SecaoPlantas() {
           
           <div className="text-center md:text-left pl-0 md:pl-16">
             <h2 className="text-white text-xl sm:text-2xl md:text-3xl lg:text-[2.2rem] uppercase tracking-tight leading-snug">
-              <span className="font-medium block">
+              <span className="font-regular block">
                 Plantas inteligentes para todos
               </span>
-              <span className="font-black block">
+              <span className="font-bold block">
                 os gostos e necessidades.
               </span>
             </h2>
