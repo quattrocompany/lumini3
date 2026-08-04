@@ -65,7 +65,7 @@ export default function SecaoLazer() {
               LAZER E DIVERSÃO A QUALQUER HORA
             </span>
             <span className="font-bold text-[#fffffe] block">
-              PARA TODOS OS<br/>GOSTOS E IDADES.
+              PARA TODAS AS IDADES.
             </span>
           </h2>
         </div>
