@@ -5,12 +5,16 @@ import Image from "next/image";
 import { Montserrat } from "next/font/google";
 
 // Importação dos Componentes Modulares
+import SecaoBanner from "@/components/SecaoBanner";
+import SecaoAerea from "@/components/SecaoAerea";
+import SecaoContato from "@/components/SecaoContato";
 import SecaoQualidadeDeVida from "@/components/QualidadeDeVida"; 
 import SecaoSegurancaComodidade from "@/components/SecaoSegurancaComodidade";
 import SecaoLazer from "@/components/SecaoLazer";
 import SecaoImplantacao from "@/components/SecaoImplantacao";
-import SecaoPlantas from "@/components/SecaoPlantas"; // <-- IMPORTAÇÃO DA NOVA SEÇÃO
+import SecaoPlantas from "@/components/SecaoPlantas";
 import SecaoMobilidadeUrbana from "@/components/SecaoMobilidadeUrbana";
+import CookieBanner from "@/components/CookieBanner";
 
 const montserrat = Montserrat({ 
   subsets: ["latin"], 
@@ -19,14 +23,19 @@ const montserrat = Montserrat({
 });
 
 export default function Home() {
-  const [activeModal, setActiveModal] = useState<"privacidade" | "lgpd" | null>(null);
+  const [activeModal, setActiveModal] = useState<"privacidade" | "lgpd" | "whatsapp" | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>("home");
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
+  const [showStickyBar, setShowStickyBar] = useState<boolean>(false);
+  
+  // Estado para o formulário do WhatsApp
+  const [formData, setFormData] = useState({ name: '', email: '', whatsapp: '' });
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 30);
+      setShowStickyBar(window.scrollY > 500);
 
       const sections = ["home", "produto", "mapa", "contato", "lazer", "seguranca", "implantacao", "plantas", "localizacao", "realizacao"];
       const scrollPosition = window.scrollY + 220;
@@ -48,7 +57,7 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const openModal = (modal: "privacidade" | "lgpd") => {
+  const openModal = (modal: "privacidade" | "lgpd" | "whatsapp") => {
     setActiveModal(modal);
     if (typeof window !== "undefined") document.body.style.overflow = "hidden";
   };
@@ -56,6 +65,21 @@ export default function Home() {
   const closeModal = () => {
     setActiveModal(null);
     if (typeof window !== "undefined") document.body.style.overflow = "auto";
+  };
+
+  const handleWhatsAppSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (typeof window !== "undefined" && (window as any).dataLayer) {
+      (window as any).dataLayer.push({ 
+        event: "clique_whatsapp",
+        lead_data: formData 
+      });
+    }
+
+    window.open("https://api.whatsapp.com/send?phone=551141644000", "_blank");
+    closeModal();
+    setFormData({ name: '', email: '', whatsapp: '' });
   };
 
   return (
@@ -147,152 +171,13 @@ export default function Home() {
       </header>
 
       {/* ================= HERO SECTION ================= */}
-      <section 
-        id="home"
-        className="relative flex flex-col items-center justify-start pt-32 md:pt-40 pb-0 bg-cover bg-center bg-no-repeat overflow-hidden"
-        style={{ backgroundImage: "url('/img/fundo01.png')" }}
-      >
-        <div className="max-w-[1440px] mx-auto px-6 md:px-12 w-full flex flex-col items-center text-center z-10 relative" id="produto">
-          <div className="mb-2 w-full">
-            <h2 className="text-[#FFBA00] font-black text-lg sm:text-xl md:text-2xl lg:text-3xl uppercase tracking-wider mb-1 drop-shadow-md">
-              EMPREENDIMENTO EM CARAPICUÍBA
-            </h2>
-            <h3 className="text-white font-black text-xl sm:text-2xl md:text-3xl lg:text-4xl uppercase tracking-wide drop-shadow-md">
-              7 MIN. DO PARQUE SHOPPING BARUERI
-            </h3>
-          </div>
-        </div>
-
-        <div className="w-full relative z-10 flex items-end justify-center mt-6 md:mt-10 px-2 sm:px-6">
-          <Image 
-            src="/img/Banner_Principal_Dogs.png" 
-            alt="Lumini 3 - A família cresceu! Agora com 3 Dorms." 
-            width={1920} 
-            height={1080} 
-            quality={100}
-            className="w-full max-w-[1920px] h-auto object-contain block"
-            priority
-          />
-        </div>
-      </section>
+      <SecaoBanner />
 
       {/* ================= SEÇÃO: MAPA DA REGIÃO ================= */}
-      <section 
-        id="mapa" 
-        className="relative z-0 bg-white pt-8 sm:pt-12 md:pt-16 pb-6 md:pb-10 -mt-[5rem]"
-      >
-        <div className="max-w-[1440px] mx-auto px-6 md:px-12 flex flex-col items-center">
-          <div className="w-full relative rounded-[2.5rem] overflow-hidden shadow-xl">
-            <Image 
-              src="/img/aerea-desktop.jpg" 
-              alt="Vista Aérea da Região do Empreendimento Lumini 3 em Carapicuíba" 
-              width={1440} 
-              height={810} 
-              quality={100}
-              className="w-full h-auto object-cover block"
-              priority
-            />
-          </div>
-        </div>
-      </section>
+      <SecaoAerea />
 
-      {/* ================= SEÇÃO: FORMULÁRIO DE CADASTRO COM EDIFÍCIO ================= */}
-      <section id="contato" className="py-8 md:py-16 bg-white relative z-10 overflow-visible">
-        <div className="max-w-[1440px] mx-auto px-6 md:px-12 overflow-visible">
-          
-          <div className="relative bg-gradient-to-r from-[#FFBA00] via-[#FF9E00] to-[#F77A2C] rounded-[2.5rem] shadow-xl flex flex-col lg:flex-row items-stretch justify-between mt-28 md:mt-40 lg:mt-1 overflow-visible">
-            
-            <div className="relative w-full lg:w-5/12 flex flex-col justify-end overflow-visible min-h-[400px] lg:min-h-[320px]">
-              <div className="relative lg:absolute lg:bottom-0 lg:left-0 w-full lg:w-[115%] -mt-24 sm:-mt-60 lg:-mt-80 z-20 pointer-events-none rounded-bl-[2.5rem] overflow-hidden">
-                <Image 
-                  src="/img/edificios.png" 
-                  alt="Edifício Lumini 3 - Arquitetura Moderna" 
-                  width={1200} 
-                  height={1400} 
-                  quality={100}
-                  className="w-full h-auto object-contain block rounded-bl-[2.5rem]"
-                  priority
-                />
-              </div>
-            </div>
-
-            <div className="w-full lg:w-6/12 flex flex-col justify-center p-6 sm:p-10 lg:p-12 xl:pr-16 xl:pl-8 z-10">
-              <h3 className="font-medium text-[#4A137B] text-xl sm:text-2xl lg:text-3xl uppercase leading-tight mb-6 drop-shadow-sm">
-                CADASTRE-SE E RECEBA EM 1ª MÃO TODAS AS INFORMAÇÕES:
-              </h3>
-
-              <form className="space-y-4 w-full">
-                <div>
-                  <label htmlFor="lead-nome" className="sr-only">Nome*</label>
-                  <input 
-                    id="lead-nome"
-                    type="text" 
-                    placeholder="Nome*" 
-                    required 
-                    className="w-full bg-white border-none rounded-full px-6 py-4 text-sm outline-none focus:ring-4 focus:ring-[#7629BB]/30 transition-all font-medium text-gray-800 placeholder-gray-400 shadow-sm"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="lead-email" className="sr-only">E-mail*</label>
-                  <input 
-                    id="lead-email"
-                    type="email" 
-                    placeholder="E-mail*" 
-                    required 
-                    className="w-full bg-white border-none rounded-full px-6 py-4 text-sm outline-none focus:ring-4 focus:ring-[#7629BB]/30 transition-all font-medium text-gray-800 placeholder-gray-400 shadow-sm"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="lead-tel" className="sr-only">Telefone*</label>
-                  <input 
-                    id="lead-tel"
-                    type="tel" 
-                    placeholder="Telefone*" 
-                    required 
-                    className="w-full bg-white border-none rounded-full px-6 py-4 text-sm outline-none focus:ring-4 focus:ring-[#7629BB]/30 transition-all font-medium text-gray-800 placeholder-gray-400 shadow-sm"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="lead-msg" className="sr-only">Mensagem*</label>
-                  <textarea 
-                    id="lead-msg"
-                    rows={4}
-                    placeholder="Mensagem*" 
-                    required 
-                    className="w-full bg-white border-none rounded-3xl px-6 py-4 text-sm outline-none focus:ring-4 focus:ring-[#7629BB]/30 transition-all font-medium text-gray-800 placeholder-gray-400 shadow-sm resize-none"
-                  />
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-                  <div className="bg-white border border-gray-200 rounded-lg p-2.5 px-4 flex items-center gap-3 shadow-sm w-full sm:w-auto">
-                    <input type="checkbox" id="recaptcha" className="w-5 h-5 accent-[#7629BB] rounded cursor-pointer" />
-                    <label htmlFor="recaptcha" className="text-xs font-medium text-gray-600 cursor-pointer select-none">
-                      Não sou um robô
-                    </label>
-                    <div className="ml-auto sm:ml-4 flex flex-col items-center justify-center">
-                      <svg className="w-5 h-5 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2A10 10 0 1 0 22 12 10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/>
-                      </svg>
-                      <span className="text-[8px] text-gray-400">reCAPTCHA</span>
-                    </div>
-                  </div>
-
-                  <button 
-                    type="submit" 
-                    className="w-full sm:w-auto bg-[#7629BB] hover:bg-[#4A137B] text-[#FFFFFF] font-black text-base uppercase tracking-widest px-12 py-4 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl active:scale-95"
-                  >
-                    ENVIAR
-                  </button>
-                </div>
-              </form>
-            </div>
-
-          </div>
-        </div>
-      </section>
+      {/* ================= SEÇÃO: FORMULÁRIO DE CADASTRO ================= */}
+      <SecaoContato />
 
       {/* ================= FLUXO DAS SEÇÕES MODULARES ================= */}
       
@@ -317,54 +202,157 @@ export default function Home() {
       {/* ============================================================= */}
 
       {/* ================= FOOTER ================= */}
-      <footer id="realizacao" className="bg-[#4A137B] text-white pt-16 pb-8 border-t-[10px] border-[#FFBA00]">
-        <div className="max-w-[1440px] mx-auto px-6 md:px-12">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
-            <div>
-              <h5 className="text-[#FFBA00] text-xl font-black uppercase tracking-widest mb-6">VISITE DECORADOS</h5>
-              <p className="text-gray-300 leading-relaxed font-light mb-4 text-sm">
-                AV. VICTORIO FORNAZZARO, 100<br/>VILA SUL AMERICANA / CARAPICUÍBA SP
-              </p>
-              <p className="text-base">
-                <strong>CENTRAL DE VENDAS:</strong> <span className="text-[#FFBA00] font-black ml-1">4164.4000</span>
-              </p>
-              <button className="mt-4 text-[#FFBA00] font-bold tracking-wider hover:underline uppercase text-xs block">
-                VER DIREÇÕES &rarr;
-              </button>
-            </div>
-            
-            <div>
-              <h5 className="text-[#FFBA00] text-xl font-black uppercase tracking-widest mb-6">REALIZAÇÃO / PARCEIROS</h5>
-              <p className="text-gray-300 font-light mb-2 text-base">
-                <strong className="text-white font-black">CAIXA</strong> Econômica Federal
-              </p>
-              <p className="text-gray-300 font-light text-base">
-                <strong className="text-white font-black">QUATTRO</strong> Incorporadora
-              </p>
-            </div>
-            
-            <div>
-              <h5 className="text-[#FFBA00] text-xl font-black uppercase tracking-widest mb-6">ATENDIMENTO</h5>
-              <p className="text-gray-300 font-medium mb-2 cursor-pointer hover:text-white transition-colors uppercase tracking-wider text-sm">
-                FALE PELO WHATSAPP
-              </p>
-              <p className="text-gray-300 font-medium cursor-pointer hover:text-white transition-colors uppercase tracking-wider text-sm">
-                VISITE NOSSO ESTANDE
-              </p>
-            </div>
-          </div>
+      <footer id="realizacao" className="bg-white pt-12 pb-32 md:pb-40 relative z-10 w-full overflow-hidden">
+        <div className="max-w-[1440px] mx-auto px-6 md:px-12 flex flex-col items-center">
           
-          <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-center items-center gap-6 text-xs text-gray-400">
-            <button onClick={() => openModal('privacidade')} className="hover:text-[#FFBA00] transition-colors focus:outline-none font-medium tracking-wide">
-              Política de Privacidade
-            </button>
-            <button onClick={() => openModal('lgpd')} className="hover:text-[#FFBA00] transition-colors focus:outline-none font-medium tracking-wide">
-              Termos de Uso / LGPD
-            </button>
-            <span className="font-light tracking-wide">&copy; 2026 Quattro Inc. Todos os direitos reservados.</span>
+          {/* Logos de Parcerias */}
+          <div className="w-full border-t border-gray-200 border-b py-12 mb-8 mt-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4 items-stretch justify-items-center text-center min-h-[160px]">
+              
+              {/* 1. INCORPORAÇÃO */}
+              <div className="flex flex-col items-center justify-start w-full">
+                <span className="text-[7px] sm:text-[8px] text-gray-500 font-semibold uppercase tracking-widest h-6 flex items-start justify-center">
+                  INCORPORAÇÃO:
+                </span>
+                <div className="flex-1 flex items-center justify-center w-full">
+                  <div className="relative w-64 h-20 sm:w-72 sm:h-24">
+                    <Image 
+                      src="/img/logo-quattro-inc.png" 
+                      alt="Quattro Inc" 
+                      fill 
+                      className="object-contain" 
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. CONSTRUÇÃO */}
+              <div className="flex flex-col items-center justify-start w-full">
+                <span className="text-[7px] sm:text-[8px] text-gray-500 font-semibold uppercase tracking-widest h-6 flex items-start justify-center">
+                  CONSTRUÇÃO:
+                </span>
+                <div className="flex-1 flex items-center justify-center w-full">
+                  <div className="relative w-32 h-32 sm:w-40 sm:h-40">
+                    <Image 
+                      src="/img/logo-quattro-construtora.png" 
+                      alt="Quattro Construtora" 
+                      fill 
+                      className="object-contain" 
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. INTERMEDIAÇÃO */}
+              <div className="flex flex-col items-center justify-start w-full">
+                <span className="text-[7px] sm:text-[8px] text-gray-500 font-semibold uppercase tracking-widest h-6 flex items-start justify-center">
+                  INTERMEDIAÇÃO:
+                </span>
+                <div className="flex-1 flex items-center justify-center w-full">
+                  <div className="relative w-56 h-20 sm:w-64 sm:h-24">
+                    <Image 
+                      src="/img/logo-direcoes.png" 
+                      alt="Direções Imobiliária" 
+                      fill 
+                      className="object-contain" 
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. FINANCIAMENTO */}
+              <div className="flex flex-col items-center justify-start w-full">
+                <span className="text-[7px] sm:text-[8px] text-gray-500 font-semibold uppercase tracking-widest h-6 flex items-start justify-center">
+                  FINANCIAMENTO:
+                </span>
+                <div className="flex-1 flex items-center justify-center w-full">
+                  <div className="relative w-56 h-16 sm:w-64 sm:h-20">
+                    <Image 
+                      src="/img/logo-caixa.png" 
+                      alt="CAIXA" 
+                      fill 
+                      className="object-contain" 
+                    />
+                  </div>
+                </div>
+              </div>
+
+            </div>
           </div>
+
+          {/* Disclaimer Legal */}
+          <div className="mb-8 w-full">
+            <p className="text-[10px] sm:text-[11px] text-gray-500 text-justify leading-relaxed font-normal">
+              R.I. no R.14, Matrícula N°23.286 no C.R.I. de Carapicuíba em 04/09/2025. *Valor referente a unidade N°4, pavimento térreo da Torre C, de 2 dorms., sem vaga, com 34,60m². A inclusão no Programa Minha Casa Minha vida está vinculada ao enquadramento de renda e regras do Programa, à época da assinatura do contrato de financiamento. Apesar de todo cuidado na obtenção das informações contidas neste material, elas não devem ser consideradas como parte integrante de qualquer contrato. As áreas de lazer serão entregues equipadas e decoradas de acordo com o memorial descritivo. As ilustrações, artes, fotos, mobiliário, vegetação e peças de decoração dos materiais de divulgação têm caráter exclusivamente promocional por tratar-se de bem a ser construído, sendo que as condições de comercialização projetos e especificações são aquelas dos contratos e memoriais a serem firmados com os adquirentes. A vegetação será entregue em diferentes tamanhos e portes. Fotos ilustrativas. Perspectivas artísticas. O empreendimento localiza-se na Rua Heitor de Oliveira, 80 – Vila Sul Americana/ Carapicuíba.
+            </p>
+          </div>
+
+          {/* Copyright e Links */}
+          <div className="border-t border-gray-200 pt-6 text-center w-full">
+            <p className="text-xs sm:text-sm text-gray-400 font-medium">
+              © 2026 | Lumini 3 | <button onClick={() => openModal('lgpd')} className="font-bold hover:text-[#7629BB] transition-colors focus:outline-none">Termos de Uso</button> e <button onClick={() => openModal('privacidade')} className="font-bold hover:text-[#7629BB] transition-colors focus:outline-none">Política de Privacidade</button>
+            </p>
+          </div>
+
         </div>
       </footer>
+
+      {/* Ícone Flutuante do WhatsApp (Verde) */}
+      <a 
+        href="#"
+        onClick={(e) => { e.preventDefault(); openModal('whatsapp'); }}
+        className={`fixed right-4 sm:right-8 z-[60] transition-all duration-500 hover:scale-110 focus:outline-none ${showStickyBar ? "bottom-[90px] md:bottom-[80px] opacity-100" : "-bottom-20 opacity-0 pointer-events-none"}`}
+        aria-label="Fale pelo WhatsApp"
+      >
+        <div className="bg-white rounded-full p-1 shadow-lg border border-gray-100">
+          <svg className="w-12 h-12 text-[#25D366]" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12.031 2C6.496 2 2 6.496 2 12.031c0 1.931.547 3.743 1.516 5.334L2 22l4.781-1.469a10.02 10.02 0 005.25 1.485c5.535 0 10.031-4.496 10.031-10.031S17.566 2 12.031 2zm0 18.375c-1.634 0-3.188-.415-4.571-1.2l-.328-.188-3.398 1.047 1.062-3.328-.219-.344a8.381 8.381 0 01-1.328-4.516c0-4.634 3.772-8.406 8.406-8.406 4.635 0 8.407 3.772 8.407 8.406s-3.772 8.406-8.407 8.406zm4.61-6.313c-.25-.125-1.484-.734-1.719-.812-.234-.078-.406-.125-.578.125-.172.25-.656.812-.812.984-.156.172-.312.188-.562.063-.25-.125-1.059-.39-2.019-1.246-.747-.669-1.254-1.494-1.406-1.744-.153-.25-.016-.385.109-.509.112-.112.25-.297.375-.447.125-.15.172-.25.25-.422.078-.172.039-.328-.023-.453-.063-.125-.578-1.391-.797-1.906-.211-.502-.422-.434-.578-.442l-.485-.008c-.172 0-.453.063-.688.313-.234.25-.891.875-.891 2.125s.914 2.453 1.047 2.625c.125.172 1.781 2.719 4.313 3.813.601.258 1.07.412 1.437.528.604.192 1.156.164 1.593.1.487-.072 1.484-.606 1.688-1.194.203-.588.203-1.094.14-1.194-.062-.1-.234-.156-.484-.281z"/>
+          </svg>
+        </div>
+      </a>
+
+      {/* Barra Roxa Fixa de Atendimento */}
+      <div 
+        className={`fixed bottom-0 left-0 w-full z-50 bg-[#8B00FF] shadow-[0_-10px_30px_rgba(139,0,255,0.3)] transition-transform duration-500 ease-in-out ${
+          showStickyBar ? "translate-y-0 rounded-t-2xl md:rounded-t-3xl" : "translate-y-full"
+        }`}
+      >
+        <div className="max-w-[1440px] mx-auto flex flex-row items-stretch justify-center h-14 divide-x divide-white/20">
+          
+          <a 
+            href="tel:+551141644000" 
+            className="flex-1 flex md:hidden items-center justify-center text-white hover:bg-white/10 transition-colors group px-2"
+          >
+            <svg className="w-6 h-6 sm:w-7 sm:h-7 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+            </svg>
+            <span className="hidden">Atendimento Telefônico</span>
+          </a>
+
+          <a 
+            href="#" 
+            onClick={(e) => { e.preventDefault(); openModal('whatsapp'); }}
+            className="flex-1 flex items-center justify-center gap-0 md:gap-3 text-white hover:bg-white/10 transition-colors group px-2 focus:outline-none"
+          >
+            <svg className="w-6 h-6 sm:w-7 sm:h-7 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12.031 2C6.496 2 2 6.496 2 12.031c0 1.931.547 3.743 1.516 5.334L2 22l4.781-1.469a10.02 10.02 0 005.25 1.485c5.535 0 10.031-4.496 10.031-10.031S17.566 2 12.031 2zm0 18.375c-1.634 0-3.188-.415-4.571-1.2l-.328-.188-3.398 1.047 1.062-3.328-.219-.344a8.381 8.381 0 01-1.328-4.516c0-4.634 3.772-8.406 8.406-8.406 4.635 0 8.407 3.772 8.407 8.406s-3.772 8.406-8.407 8.406zm4.61-6.313c-.25-.125-1.484-.734-1.719-.812-.234-.078-.406-.125-.578.125-.172.25-.656.812-.812.984-.156.172-.312.188-.562.063-.25-.125-1.059-.39-2.019-1.246-.747-.669-1.254-1.494-1.406-1.744-.153-.25-.016-.385.109-.509.112-.112.25-.297.375-.447.125-.15.172-.25.25-.422.078-.172.039-.328-.023-.453-.063-.125-.578-1.391-.797-1.906-.211-.502-.422-.434-.578-.442l-.485-.008c-.172 0-.453.063-.688.313-.234.25-.891.875-.891 2.125s.914 2.453 1.047 2.625c.125.172 1.781 2.719 4.313 3.813.601.258 1.07.412 1.437.528.604.192 1.156.164 1.593.1.487-.072 1.484-.606 1.688-1.194.203-.588.203-1.094.14-1.194-.062-.1-.234-.156-.484-.281z"/>
+            </svg>
+            <span className="hidden md:block text-xs sm:text-sm font-medium tracking-wider uppercase">Fale pelo WhatsApp</span>
+          </a>
+
+          <a 
+            href="#localizacao" 
+            className="flex-1 flex items-center justify-center gap-0 md:gap-3 text-white hover:bg-white/10 transition-colors group px-2"
+          >
+            <svg className="w-6 h-6 sm:w-7 sm:h-7 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span className="hidden md:block text-xs sm:text-sm font-medium tracking-wider uppercase">Visite nosso estande</span>
+          </a>
+
+        </div>
+      </div>
 
       {/* ================= MODAIS ================= */}
       {activeModal && (
@@ -407,9 +395,88 @@ export default function Home() {
                 </p>
               </>
             )}
+
+            {activeModal === 'whatsapp' && (
+              <>
+                <div className="text-center mb-8">
+                  <h3 className="text-2xl font-black text-[#4A137B] uppercase tracking-wide">
+                    Atendimento
+                    <br />
+                    WhatsApp
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Preencha seus dados para iniciarmos o atendimento.
+                  </p>
+                </div>
+
+                <form onSubmit={handleWhatsAppSubmit} className="space-y-4 max-w-md mx-auto">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Nome *</label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="Seu nome"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#7629BB]/50 transition-all text-gray-800 placeholder-gray-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Email *</label>
+                    <input 
+                      type="email" 
+                      required
+                      placeholder="Seu e-mail"
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#7629BB]/50 transition-all text-gray-800 placeholder-gray-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">WhatsApp *</label>
+                    <input 
+                      type="tel" 
+                      required
+                      placeholder="Seu whatsapp"
+                      value={formData.whatsapp}
+                      onChange={(e) => setFormData({...formData, whatsapp: e.target.value})}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#7629BB]/50 transition-all text-gray-800 placeholder-gray-400"
+                    />
+                  </div>
+
+                  <p className="text-[11px] text-gray-400 italic pt-2">
+                    * Dados obrigatórios
+                  </p>
+
+                  <div className="pt-4 flex flex-col gap-3">
+                    <button 
+                      type="submit" 
+                      className="w-full bg-[#25D366] hover:bg-[#1DA851] text-white font-bold py-3.5 px-6 rounded-full transition-colors uppercase tracking-wider text-sm shadow-md flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12.031 2C6.496 2 2 6.496 2 12.031c0 1.931.547 3.743 1.516 5.334L2 22l4.781-1.469a10.02 10.02 0 005.25 1.485c5.535 0 10.031-4.496 10.031-10.031S17.566 2 12.031 2zm0 18.375c-1.634 0-3.188-.415-4.571-1.2l-.328-.188-3.398 1.047 1.062-3.328-.219-.344a8.381 8.381 0 01-1.328-4.516c0-4.634 3.772-8.406 8.406-8.406 4.635 0 8.407 3.772 8.407 8.406s-3.772 8.406-8.407 8.406zm4.61-6.313c-.25-.125-1.484-.734-1.719-.812-.234-.078-.406-.125-.578.125-.172.25-.656.812-.812.984-.156.172-.312.188-.562.063-.25-.125-1.059-.39-2.019-1.246-.747-.669-1.254-1.494-1.406-1.744-.153-.25-.016-.385.109-.509.112-.112.25-.297.375-.447.125-.15.172-.25.25-.422.078-.172.039-.328-.023-.453-.063-.125-.578-1.391-.797-1.906-.211-.502-.422-.434-.578-.442l-.485-.008c-.172 0-.453.063-.688.313-.234.25-.891.875-.891 2.125s.914 2.453 1.047 2.625c.125.172 1.781 2.719 4.313 3.813.601.258 1.07.412 1.437.528.604.192 1.156.164 1.593.1.487-.072 1.484-.606 1.688-1.194.203-.588.203-1.094.14-1.194-.062-.1-.234-.156-.484-.281z"/>
+                      </svg>
+                      Ir para WhatsApp
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={closeModal}
+                      className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3.5 px-6 rounded-full transition-colors uppercase tracking-wider text-sm shadow-md"
+                    >
+                      Fechar
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}
+
+      {/* ================= COOKIE BANNER LGPD ================= */}
+      <CookieBanner />
     </main>
   );
 }
