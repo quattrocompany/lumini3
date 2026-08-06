@@ -4,17 +4,18 @@ export default function BotaoWhatsApp() {
   const handleWhatsAppClick = (e: React.MouseEvent) => {
     e.preventDefault();
     
-    // Dispara evento customizado para o GTM capturar a conversão de clique
-    if (typeof window !== "undefined" && (window as any).dataLayer) {
-      (window as any).dataLayer.push({ event: "clique_whatsapp" });
+    // Dispara o evento global para abrir o modal de cadastro no page.tsx
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("openWhatsAppModal"));
     }
-
-    // Abre a API do WhatsApp em nova aba mantendo o link original[cite: 2]
-    window.open("https://api.whatsapp.com/send?phone=551141644000", "_blank");
   };
 
   return (
-    <button onClick={handleWhatsAppClick} className="bg-green-500 text-white p-3 rounded">
+    <button 
+      onClick={handleWhatsAppClick} 
+      className="bg-green-500 text-white p-3 rounded"
+      aria-label="Falar no WhatsApp"
+    >
       Falar no WhatsApp
     </button>
   );
