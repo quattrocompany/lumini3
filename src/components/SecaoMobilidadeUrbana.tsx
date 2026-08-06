@@ -23,8 +23,6 @@ const infraImages: SlideItem[] = [
 
 export default function SecaoMobilidadeUrbana() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isWhatsappModalOpen, setIsWhatsappModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: '', email: '', whatsapp: '' });
 
   const nextSlide = useCallback(() => {
     setCurrentIndex((prev) => (prev + 2 >= infraImages.length ? 0 : prev + 2));
@@ -39,24 +37,9 @@ export default function SecaoMobilidadeUrbana() {
 
   const handleOpenWhatsappModal = (e: React.MouseEvent) => {
     e.preventDefault();
-    setIsWhatsappModalOpen(true);
-  };
-
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Dispara evento customizado para o GTM capturar a conversão de clique/lead
-    if (typeof window !== "undefined" && (window as any).dataLayer) {
-      (window as any).dataLayer.push({ 
-        event: "clique_whatsapp",
-        lead_data: formData 
-      });
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("openWhatsAppModal"));
     }
-
-    // Abre a API do WhatsApp em nova aba
-    window.open("https://api.whatsapp.com/send?phone=551141644000", "_blank");
-    setIsWhatsappModalOpen(false);
-    setFormData({ name: '', email: '', whatsapp: '' });
   };
 
   return (
@@ -77,7 +60,7 @@ export default function SecaoMobilidadeUrbana() {
           </h2>
         </div>
 
-        {/* Carrossel de 2 em 2 (Separado e Alinhado com o Mapa) */}
+        {/* Carrossel de 2 em 2 */}
         <div className="w-full max-w-[1100px] mx-auto overflow-hidden mb-16">
           <div 
             className="flex transition-transform duration-700 ease-in-out"
@@ -98,7 +81,7 @@ export default function SecaoMobilidadeUrbana() {
                   </div>
                 )}
                 
-                {/* Imagem Direita (Transparente caso seja ímpar para não desconfigurar layout) */}
+                {/* Imagem Direita */}
                 {infraImages[groupIndex * 2 + 1] ? (
                   <div className="w-1/2 relative aspect-[16/9] md:aspect-[4/3] lg:aspect-[16/10] rounded-xl md:rounded-2xl overflow-hidden shadow-lg border border-white">
                     <Image
@@ -192,95 +175,6 @@ export default function SecaoMobilidadeUrbana() {
           </button>
         </div>
       </div>
-
-      {/* Modal de Cadastro WhatsApp */}
-      {isWhatsappModalOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-          <div className="bg-white rounded-3xl p-6 md:p-10 w-full max-w-md shadow-2xl relative">
-            <button 
-              onClick={() => setIsWhatsappModalOpen(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-[#7629BB] transition-colors focus:outline-none"
-              aria-label="Fechar Modal"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
-            <div className="text-center mb-8">
-              <h3 className="text-2xl font-black text-[#4A137B] uppercase tracking-wide">
-                Atendimento
-                <br />
-                WhatsApp
-              </h3>
-              <p className="text-sm text-gray-500 mt-2">
-                Preencha seus dados para iniciarmos o atendimento.
-              </p>
-            </div>
-
-            <form onSubmit={handleFormSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Nome *</label>
-                <input 
-                  type="text" 
-                  required
-                  placeholder="Seu nome"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#7629BB]/50 transition-all text-gray-800 placeholder-gray-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Email *</label>
-                <input 
-                  type="email" 
-                  required
-                  placeholder="Seu e-mail"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#7629BB]/50 transition-all text-gray-800 placeholder-gray-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">WhatsApp *</label>
-                <input 
-                  type="tel" 
-                  required
-                  placeholder="Seu whatsapp"
-                  value={formData.whatsapp}
-                  onChange={(e) => setFormData({...formData, whatsapp: e.target.value})}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#7629BB]/50 transition-all text-gray-800 placeholder-gray-400"
-                />
-              </div>
-
-              <p className="text-[11px] text-gray-400 italic pt-2">
-                * Dados obrigatórios
-              </p>
-
-              <div className="pt-4 flex flex-col gap-3">
-                <button 
-                  type="submit" 
-                  className="w-full bg-[#25D366] hover:bg-[#1DA851] text-white font-bold py-3.5 px-6 rounded-full transition-colors uppercase tracking-wider text-sm shadow-md flex items-center justify-center gap-2"
-                >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12.031 2C6.496 2 2 6.496 2 12.031c0 1.931.547 3.743 1.516 5.334L2 22l4.781-1.469a10.02 10.02 0 005.25 1.485c5.535 0 10.031-4.496 10.031-10.031S17.566 2 12.031 2zm0 18.375c-1.634 0-3.188-.415-4.571-1.2l-.328-.188-3.398 1.047 1.062-3.328-.219-.344a8.381 8.381 0 01-1.328-4.516c0-4.634 3.772-8.406 8.406-8.406 4.635 0 8.407 3.772 8.407 8.406s-3.772 8.406-8.407 8.406zm4.61-6.313c-.25-.125-1.484-.734-1.719-.812-.234-.078-.406-.125-.578.125-.172.25-.656.812-.812.984-.156.172-.312.188-.562.063-.25-.125-1.059-.39-2.019-1.246-.747-.669-1.254-1.494-1.406-1.744-.153-.25-.016-.385.109-.509.112-.112.25-.297.375-.447.125-.15.172-.25.25-.422.078-.172.039-.328-.023-.453-.063-.125-.578-1.391-.797-1.906-.211-.502-.422-.434-.578-.442l-.485-.008c-.172 0-.453.063-.688.313-.234.25-.891.875-.891 2.125s.914 2.453 1.047 2.625c.125.172 1.781 2.719 4.313 3.813.601.258 1.07.412 1.437.528.604.192 1.156.164 1.593.1.487-.072 1.484-.606 1.688-1.194.203-.588.203-1.094.14-1.194-.062-.1-.234-.156-.484-.281z"/>
-                  </svg>
-                  Ir para WhatsApp
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => setIsWhatsappModalOpen(false)}
-                  className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3.5 px-6 rounded-full transition-colors uppercase tracking-wider text-sm shadow-md"
-                >
-                  Fechar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </section>
   );
 }
