@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+// Força o Next.js a tratar esta rota como dinâmica no build
+export const dynamic = "force-dynamic";
+
 interface Lead {
   nome?: string;
   email?: string;

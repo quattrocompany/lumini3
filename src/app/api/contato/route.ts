@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 import { createClient } from "@supabase/supabase-js";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: Request) {
   try {
     const { nome, email, telefone, mensagem, captcha, via } = await request.json();
