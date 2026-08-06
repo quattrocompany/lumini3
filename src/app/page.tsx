@@ -28,7 +28,6 @@ export default function Home() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string>("home");
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
-  const [showStickyBar, setShowStickyBar] = useState<boolean>(false);
   
   const [formData, setFormData] = useState({ name: '', email: '', whatsapp: '' });
 
@@ -36,7 +35,6 @@ export default function Home() {
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 30);
-      setShowStickyBar(window.scrollY > 500);
 
       const domOrder = ["home", "contato", "produto", "lazer", "plantas", "localizacao", "realizacao"];
       let currentSection = "home";
@@ -58,7 +56,7 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // NOVO: Ouvinte global para abrir o modal via Evento Customizado
+  // Ouvinte global para abrir o modal via Evento Customizado
   useEffect(() => {
     const handleOpenWhatsappModal = () => openModal("whatsapp");
     window.addEventListener("openWhatsAppModal", handleOpenWhatsappModal);
@@ -88,8 +86,25 @@ export default function Home() {
     if (typeof window !== "undefined") document.body.style.overflow = "auto";
   };
 
-  const handleWhatsAppSubmit = (e: React.FormEvent) => {
+  const handleWhatsAppSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Envia o Lead para o Supabase antes de redirecionar para o WhatsApp
+    try {
+      await fetch("/api/contato", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nome: formData.name,
+          email: formData.email,
+          telefone: formData.whatsapp,
+          mensagem: "Contato via modal WhatsApp",
+          via: "whatsapp",
+        }),
+      });
+    } catch (err) {
+      console.error("Erro ao registrar lead do WhatsApp:", err);
+    }
     
     if (typeof window !== "undefined" && (window as any).dataLayer) {
       (window as any).dataLayer.push({ 
@@ -224,7 +239,6 @@ export default function Home() {
       </div>
 
       <div id="nav-realizacao">
-        {/* Passamos a função openModal como propriedade para o Footer */}
         <Footer onOpenWhatsapp={() => openModal("whatsapp")} />
       </div>
 
