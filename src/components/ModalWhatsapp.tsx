@@ -14,7 +14,7 @@ export default function ModalWhatsapp({ isOpen, onClose }: ModalWhatsappProps) {
 
   if (!isOpen) return null;
 
-  // Máscara dinâmica: (11) 4164-4000 (10 dígitos) ou (11) 9 9999-9999 (11 dígitos)
+  // Máscara dinâmica: (11) 4164-4000 ou (11) 9 9999-9999
   const maskPhone = (value: string) => {
     const digits = value.replace(/\D/g, "").slice(0, 11);
     if (!digits) return "";
@@ -31,7 +31,7 @@ export default function ModalWhatsapp({ isOpen, onClose }: ModalWhatsappProps) {
     return email.trim().toLowerCase().replace(/,/g, ".");
   };
 
-  // Checa se o e-mail tem estrutura válida (usuario@dominio.com)
+  // Validação da estrutura do e-mail
   const isValidEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
     return emailRegex.test(email);
@@ -51,7 +51,6 @@ export default function ModalWhatsapp({ isOpen, onClose }: ModalWhatsappProps) {
     setIsSubmitting(true);
 
     try {
-      // 1. Grava no Supabase via API
       await fetch("/api/contato", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -67,7 +66,6 @@ export default function ModalWhatsapp({ isOpen, onClose }: ModalWhatsappProps) {
       console.error("Erro ao salvar no Supabase:", err);
     }
 
-    // 2. Dispara o evento no DataLayer / GTM
     if (typeof window !== "undefined" && (window as any).dataLayer) {
       (window as any).dataLayer.push({ 
         event: "clique_whatsapp",
@@ -75,7 +73,6 @@ export default function ModalWhatsapp({ isOpen, onClose }: ModalWhatsappProps) {
       });
     }
 
-    // 3. Prepara a URL do WhatsApp e redireciona
     const mensagemTexto = encodeURIComponent(`Olá! Meu nome é ${formData.name}. Gostaria de mais informações sobre o Lumini 3.`);
     const waUrl = `https://api.whatsapp.com/send?phone=551141644000&text=${mensagemTexto}`;
 
@@ -94,43 +91,43 @@ export default function ModalWhatsapp({ isOpen, onClose }: ModalWhatsappProps) {
       onClick={onClose}
     >
       <div 
-        className="bg-white p-8 md:p-12 rounded-2xl w-full max-w-3xl max-h-[85vh] overflow-y-auto relative shadow-2xl"
+        className="bg-white p-6 sm:p-8 md:p-10 rounded-3xl w-full max-w-md max-h-[92vh] overflow-y-auto relative shadow-2xl [::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
         onClick={(e) => e.stopPropagation()} 
       >
         <button 
           onClick={onClose} 
-          className="absolute top-4 right-6 text-4xl text-gray-400 hover:text-[#4A137B] transition-colors focus:outline-none"
+          className="absolute top-4 right-5 text-3xl text-gray-400 hover:text-[#4A137B] transition-colors focus:outline-none"
           aria-label="Fechar Modal"
         >
           &times;
         </button>
 
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <h3 className="text-2xl font-black text-[#4A137B] uppercase tracking-wide">
             Atendimento
             <br />
             WhatsApp
           </h3>
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-xs sm:text-sm text-gray-500 mt-2">
             Preencha seus dados para iniciarmos o atendimento.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto">
+        <form onSubmit={handleSubmit} className="space-y-3.5 max-w-sm mx-auto">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Nome *</label>
+            <label className="block text-xs font-bold text-gray-700 mb-1">Nome *</label>
             <input 
               type="text" 
               required
               placeholder="Seu nome"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#7629BB]/50 transition-all text-gray-800 placeholder-gray-400"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7629BB]/50 transition-all text-gray-800 placeholder-gray-400"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Email *</label>
+            <label className="block text-xs font-bold text-gray-700 mb-1">Email *</label>
             <input 
               type="email" 
               required
@@ -141,30 +138,30 @@ export default function ModalWhatsapp({ isOpen, onClose }: ModalWhatsappProps) {
                 setFormData({ ...formData, email: sanitizeEmail(e.target.value) });
               }}
               onBlur={(e) => setFormData({ ...formData, email: sanitizeEmail(e.target.value) })}
-              className={`w-full bg-gray-50 border ${emailError ? "border-red-500" : "border-gray-200"} rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#7629BB]/50 transition-all text-gray-800 placeholder-gray-400`}
+              className={`w-full bg-gray-50 border ${emailError ? "border-red-500" : "border-gray-200"} rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7629BB]/50 transition-all text-gray-800 placeholder-gray-400`}
             />
             {emailError && <p className="text-red-500 text-xs font-semibold mt-1">{emailError}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">WhatsApp *</label>
+            <label className="block text-xs font-bold text-gray-700 mb-1">WhatsApp *</label>
             <input 
               type="tel" 
               required
               placeholder="(11) 9 9999-9999"
               value={formData.whatsapp}
               onChange={(e) => setFormData({ ...formData, whatsapp: maskPhone(e.target.value) })}
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#7629BB]/50 transition-all text-gray-800 placeholder-gray-400"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7629BB]/50 transition-all text-gray-800 placeholder-gray-400"
             />
           </div>
 
-          <p className="text-[11px] text-gray-400 italic pt-2">* Dados obrigatórios</p>
+          <p className="text-[10px] text-gray-400 italic pt-1">* Dados obrigatórios</p>
 
-          <div className="pt-4 flex flex-col gap-3">
+          <div className="pt-3 flex flex-col gap-2.5">
             <button 
               type="submit" 
               disabled={isSubmitting}
-              className="w-full bg-[#25D366] hover:bg-[#1DA851] disabled:bg-gray-400 text-white font-bold py-3.5 px-6 rounded-full transition-colors uppercase tracking-wider text-sm shadow-md flex items-center justify-center gap-2"
+              className="w-full bg-[#25D366] hover:bg-[#1DA851] disabled:bg-gray-400 text-white font-bold py-3 px-6 rounded-full transition-colors uppercase tracking-wider text-sm shadow-md flex items-center justify-center gap-2"
             >
               {!isSubmitting && (
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -176,7 +173,7 @@ export default function ModalWhatsapp({ isOpen, onClose }: ModalWhatsappProps) {
             <button 
               type="button" 
               onClick={onClose}
-              className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3.5 px-6 rounded-full transition-colors uppercase tracking-wider text-sm shadow-md"
+              className="w-full bg-[#EF4444] hover:bg-red-600 text-white font-bold py-3 px-6 rounded-full transition-colors uppercase tracking-wider text-sm shadow-md"
             >
               Fechar
             </button>
