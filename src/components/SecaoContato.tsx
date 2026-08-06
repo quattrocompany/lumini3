@@ -15,19 +15,22 @@ export default function SecaoContato() {
     setIsMounted(true);
   }, []);
 
-  // Adicionado o fallback direto com a sua chave pública para garantir que nunca seja undefined
-  const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "6LewTnUtAAAAAH9QVex9YkUw94NJY1hmL0e5WjSy";
+  // Chave pública do reCAPTCHA do Lumini 3
+  const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "6LedSHgtAAAAAPcAN_QO8ylKsyE3iJ7wH7X_gn37";
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
+    // Salva a referência do formulário antes da execução assíncrona
+    const form = e.currentTarget;
+
     if (!captchaToken) {
       alert("Por favor, confirme que você não é um robô.");
       return;
     }
 
     setStatus("loading");
-    const formData = new FormData(e.currentTarget);
+    const formData = new FormData(form);
     const data = {
       nome: formData.get("nome"),
       email: formData.get("email"),
@@ -45,13 +48,14 @@ export default function SecaoContato() {
 
       if (response.ok) {
         setStatus("success");
-        e.currentTarget.reset();
+        form.reset(); // Reseta usando a referência salva
         recaptchaRef.current?.reset();
         setCaptchaToken(null);
       } else {
         setStatus("error");
       }
     } catch (error) {
+      console.error("Erro no envio do formulário:", error);
       setStatus("error");
     }
   };
