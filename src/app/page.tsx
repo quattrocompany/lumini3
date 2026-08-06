@@ -89,7 +89,11 @@ export default function Home() {
   const handleWhatsAppSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Envia o Lead para o Supabase antes de redirecionar para o WhatsApp
+    // 1. Abre a aba do WhatsApp IMEDIATAMENTE para evitar bloqueador de popup
+    const mensagemTexto = encodeURIComponent(`Olá! Meu nome é ${formData.name}. Gostaria de mais informações sobre o Lumini 3.`);
+    const win = window.open(`https://api.whatsapp.com/send?phone=551141644000&text=${mensagemTexto}`, "_blank");
+
+    // 2. Envia o Lead para o Supabase
     try {
       await fetch("/api/contato", {
         method: "POST",
@@ -105,7 +109,8 @@ export default function Home() {
     } catch (err) {
       console.error("Erro ao registrar lead do WhatsApp:", err);
     }
-    
+
+    // 3. Dispara evento no GTM / DataLayer
     if (typeof window !== "undefined" && (window as any).dataLayer) {
       (window as any).dataLayer.push({ 
         event: "clique_whatsapp",
@@ -113,7 +118,6 @@ export default function Home() {
       });
     }
 
-    window.open("https://api.whatsapp.com/send?phone=551141644000", "_blank");
     closeModal();
     setFormData({ name: '', email: '', whatsapp: '' });
   };
