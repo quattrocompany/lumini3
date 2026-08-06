@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-const supabase = createClient(supabaseUrl, supabaseKey);
-
 interface Lead {
   nome?: string;
   email?: string;
@@ -15,13 +11,20 @@ interface Lead {
 }
 
 export async function GET() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    return NextResponse.json({ error: "Configuração do Supabase ausente." }, { status: 500 });
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseKey);
   const { data: leads, error } = await supabase.from("leads").select("*");
 
   if (error || !leads) {
     return NextResponse.json({ error: "Erro ao buscar leads" }, { status: 500 });
   }
 
-  // Converte a lista de Leads para Formato CSV
   const header = "Nome,Email,Telefone,Origem,Mensagem,Data\n";
   const rows = (leads as Lead[])
     .map(
