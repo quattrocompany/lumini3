@@ -30,8 +30,10 @@ export default function Home() {
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
   
   const [formData, setFormData] = useState({ name: '', email: '', whatsapp: '' });
+  
+  // Novo estado para controlar o botão e evitar duplo clique
+  const [isSubmittingWa, setIsSubmittingWa] = useState(false);
 
-  // Escuta o Scroll para o Header e Navegação Ativa
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 30);
@@ -56,7 +58,6 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Ouvinte global para abrir o modal via Evento Customizado
   useEffect(() => {
     const handleOpenWhatsappModal = () => openModal("whatsapp");
     window.addEventListener("openWhatsAppModal", handleOpenWhatsappModal);
@@ -88,15 +89,17 @@ export default function Home() {
 
   const handleWhatsAppSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmittingWa(true); // Muda o botão para "Redirecionando..."
 
     const mensagemTexto = encodeURIComponent(`Olá! Meu nome é ${formData.name}. Gostaria de mais informações sobre o Lumini 3.`);
     const waUrl = `https://api.whatsapp.com/send?phone=551141644000&text=${mensagemTexto}`;
 
     try {
-      // 1. Grava o Lead no Supabase e aguarda a confirmação
-      await fetch("/api/contato", {
+      // O keepalive obriga o navegador a terminar o POST mesmo saindo da página
+      const response = await fetch("/api/contato", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        keepalive: true, 
         body: JSON.stringify({
           nome: formData.name,
           email: formData.email,
@@ -105,11 +108,15 @@ export default function Home() {
           via: "whatsapp",
         }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("ERRO DA API:", errorData);
+      }
     } catch (err) {
-      console.error("Erro ao registrar lead do WhatsApp:", err);
+      console.error("Erro de conexao no WhatsApp:", err);
     }
 
-    // 2. Dispara evento no GTM / DataLayer
     if (typeof window !== "undefined" && (window as any).dataLayer) {
       (window as any).dataLayer.push({ 
         event: "clique_whatsapp",
@@ -117,10 +124,11 @@ export default function Home() {
       });
     }
 
-    // 3. Reseta o formulário e redireciona com segurança na mesma janela
+    setIsSubmittingWa(false);
     closeModal();
     setFormData({ name: '', email: '', whatsapp: '' });
     
+    // Redireciona
     if (typeof window !== "undefined") {
       window.location.href = waUrl;
     }
@@ -349,12 +357,15 @@ export default function Home() {
                   <div className="pt-4 flex flex-col gap-3">
                     <button 
                       type="submit" 
-                      className="w-full bg-[#25D366] hover:bg-[#1DA851] text-white font-bold py-3.5 px-6 rounded-full transition-colors uppercase tracking-wider text-sm shadow-md flex items-center justify-center gap-2"
+                      disabled={isSubmittingWa}
+                      className="w-full bg-[#25D366] hover:bg-[#1DA851] disabled:bg-gray-400 text-white font-bold py-3.5 px-6 rounded-full transition-colors uppercase tracking-wider text-sm shadow-md flex items-center justify-center gap-2"
                     >
-                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12.031 2C6.496 2 2 6.496 2 12.031c0 1.931.547 3.743 1.516 5.334L2 22l4.781-1.469a10.02 10.02 0 005.25 1.485c5.535 0 10.031-4.496 10.031-10.031S17.566 2 12.031 2zm0 18.375c-1.634 0-3.188-.415-4.571-1.2l-.328-.188-3.398 1.047 1.062-3.328-.219-.344a8.381 8.381 0 01-1.328-4.516c0-4.634 3.772-8.406 8.406-8.406 4.635 0 8.407 3.772 8.407 8.406s-3.772 8.406-8.407 8.406zm4.61-6.313c-.25-.125-1.484-.734-1.719-.812-.234-.078-.406-.125-.578.125-.172.25-.656.812-.812.984-.156.172-.312.188-.562.063-.25-.125-1.059-.39-2.019-1.246-.747-.669-1.254-1.494-1.406-1.744-.153-.25-.016-.385.109-.509.112-.112.25-.297.375-.447.125-.15.172-.25.25-.422.078-.172.039-.328-.023-.453-.063-.125-.578-1.391-.797-1.906-.211-.502-.422-.434-.578-.442l-.485-.008c-.172 0-.453.063-.688.313-.234.25-.891.875-.891 2.125s.914 2.453 1.047 2.625c.125.172 1.781 2.719 4.313 3.813.601.258 1.07.412 1.437.528.604.192 1.156.164 1.593.1.487-.072 1.484-.606 1.688-1.194.203-.588.203-1.094.14-1.194-.062-.1-.234-.156-.484-.281z"/>
-                      </svg>
-                      Ir para WhatsApp
+                      {!isSubmittingWa && (
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12.031 2C6.496 2 2 6.496 2 12.031c0 1.931.547 3.743 1.516 5.334L2 22l4.781-1.469a10.02 10.02 0 005.25 1.485c5.535 0 10.031-4.496 10.031-10.031S17.566 2 12.031 2zm0 18.375c-1.634 0-3.188-.415-4.571-1.2l-.328-.188-3.398 1.047 1.062-3.328-.219-.344a8.381 8.381 0 01-1.328-4.516c0-4.634 3.772-8.406 8.406-8.406 4.635 0 8.407 3.772 8.407 8.406s-3.772 8.406-8.407 8.406zm4.61-6.313c-.25-.125-1.484-.734-1.719-.812-.234-.078-.406-.125-.578.125-.172.25-.656.812-.812.984-.156.172-.312.188-.562.063-.25-.125-1.059-.39-2.019-1.246-.747-.669-1.254-1.494-1.406-1.744-.153-.25-.016-.385.109-.509.112-.112.25-.297.375-.447.125-.15.172-.25.25-.422.078-.172.039-.328-.023-.453-.063-.125-.578-1.391-.797-1.906-.211-.502-.422-.434-.578-.442l-.485-.008c-.172 0-.453.063-.688.313-.234.25-.891.875-.891 2.125s.914 2.453 1.047 2.625c.125.172 1.781 2.719 4.313 3.813.601.258 1.07.412 1.437.528.604.192 1.156.164 1.593.1.487-.072 1.484-.606 1.688-1.194.203-.588.203-1.094.14-1.194-.062-.1-.234-.156-.484-.281z"/>
+                        </svg>
+                      )}
+                      {isSubmittingWa ? "Redirecionando..." : "Ir para WhatsApp"}
                     </button>
                     <button 
                       type="button" 
