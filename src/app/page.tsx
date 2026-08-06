@@ -89,8 +89,13 @@ export default function Home() {
   const handleWhatsAppSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // 1. Abre uma nova aba síncrona para não ser bloqueada pelo navegador
+    const mensagemTexto = encodeURIComponent(`Olá! Meu nome é ${formData.name}. Gostaria de mais informações sobre o Lumini 3.`);
+    const waUrl = `https://api.whatsapp.com/send?phone=551141644000&text=${mensagemTexto}`;
+    const win = window.open('about:blank', '_blank');
+
     try {
-      // Envia para a API e aguarda o retorno
+      // 2. Envia os dados para a API do Supabase
       const response = await fetch("/api/contato", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -104,12 +109,12 @@ export default function Home() {
       });
 
       const resData = await response.json();
-      console.log("Resposta da API de contato:", resData);
+      console.log(">>> RESPOSTA SUPABASE WHATSAPP:", resData);
     } catch (err) {
-      console.error("Erro ao enviar para o Supabase:", err);
+      console.error(">>> ERRO REGISTRO SUPABASE WHATSAPP:", err);
     }
 
-    // Dispara evento no GTM / DataLayer
+    // 3. Dispara evento para DataLayer/GTM
     if (typeof window !== "undefined" && (window as any).dataLayer) {
       (window as any).dataLayer.push({ 
         event: "clique_whatsapp",
@@ -117,9 +122,12 @@ export default function Home() {
       });
     }
 
-    // Redireciona para o WhatsApp
-    const mensagemTexto = encodeURIComponent(`Olá! Meu nome é ${formData.name}. Gostaria de mais informações sobre o Lumini 3.`);
-    window.open(`https://api.whatsapp.com/send?phone=551141644000&text=${mensagemTexto}`, "_blank");
+    // 4. Redireciona a aba aberta para o link oficial do WhatsApp
+    if (win) {
+      win.location.href = waUrl;
+    } else {
+      window.location.href = waUrl;
+    }
 
     closeModal();
     setFormData({ name: '', email: '', whatsapp: '' });
