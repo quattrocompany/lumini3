@@ -3,12 +3,17 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 
-export default function Footer({ onOpenWhatsapp }: { onOpenWhatsapp?: () => void }) {
+interface FooterProps {
+  onOpenWhatsapp?: () => void;
+  onOpenPrivacidade?: () => void;
+  onOpenLgpd?: () => void;
+}
+
+export default function Footer({ onOpenWhatsapp, onOpenPrivacidade, onOpenLgpd }: FooterProps) {
   const [showStickyBar, setShowStickyBar] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      // Exibe a barra fixa após rolar 500px (passando o banner principal)
       if (window.scrollY > 500) {
         setShowStickyBar(true);
       } else {
@@ -20,14 +25,21 @@ export default function Footer({ onOpenWhatsapp }: { onOpenWhatsapp?: () => void
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Lógica restaurada para ABRIR O MODAL DE CADASTRO antes do WhatsApp
   const handleWhatsappClick = (e: React.MouseEvent) => {
     e.preventDefault();
     if (onOpenWhatsapp) {
       onOpenWhatsapp();
     } else {
-      // Dispara o evento customizado para abrir o Modal (onde está o formulário)
       window.dispatchEvent(new CustomEvent("openWhatsAppModal"));
+    }
+  };
+
+  const handlePrivacidadeClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onOpenPrivacidade) {
+      onOpenPrivacidade();
+    } else {
+      window.dispatchEvent(new CustomEvent("openPrivacidadeModal"));
     }
   };
 
@@ -40,63 +52,39 @@ export default function Footer({ onOpenWhatsapp }: { onOpenWhatsapp?: () => void
           <div className="border-t border-gray-200 border-b py-10 mb-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-y-10 gap-x-6 items-start justify-items-center text-center">
               
-              {/* 1. INCORPORAÇÃO (Quattro Inc) */}
               <div className="flex flex-col items-center justify-start w-full">
                 <span className="text-[9px] sm:text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-3">
                   INCORPORAÇÃO:
                 </span>
                 <div className="relative w-full max-w-[140px] sm:max-w-[180px] h-16 sm:h-24">
-                  <Image 
-                    src="/img/logo-quattro-inc.png" 
-                    alt="Quattro Inc" 
-                    fill 
-                    className="object-contain" 
-                  />
+                  <Image src="/img/logo-quattro-inc.png" alt="Quattro Inc" fill className="object-contain" />
                 </div>
               </div>
 
-              {/* 2. CONSTRUÇÃO (Quattro Construtora) */}
               <div className="flex flex-col items-center justify-start w-full">
                 <span className="text-[9px] sm:text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-3">
                   CONSTRUÇÃO:
                 </span>
                 <div className="relative w-full max-w-[110px] sm:max-w-[130px] h-16 sm:h-24">
-                  <Image 
-                    src="/img/logo-quattro-construtora.png" 
-                    alt="Quattro Construtora" 
-                    fill 
-                    className="object-contain" 
-                  />
+                  <Image src="/img/logo-quattro-construtora.png" alt="Quattro Construtora" fill className="object-contain" />
                 </div>
               </div>
 
-              {/* 3. INTERMEDIAÇÃO (Direções) */}
               <div className="flex flex-col items-center justify-start w-full">
                 <span className="text-[9px] sm:text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-3">
                   INTERMEDIAÇÃO:
                 </span>
                 <div className="relative w-full max-w-[140px] sm:max-w-[180px] h-16 sm:h-24">
-                  <Image 
-                    src="/img/logo-direcoes.png" 
-                    alt="Direções Imobiliária" 
-                    fill 
-                    className="object-contain" 
-                  />
+                  <Image src="/img/logo-direcoes.png" alt="Direções Imobiliária" fill className="object-contain" />
                 </div>
               </div>
 
-              {/* 4. FINANCIAMENTO (Caixa) */}
               <div className="flex flex-col items-center justify-start w-full">
                 <span className="text-[9px] sm:text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-3">
                   FINANCIAMENTO:
                 </span>
                 <div className="relative w-full max-w-[120px] sm:max-w-[160px] h-16 sm:h-24">
-                  <Image 
-                    src="/img/logo-caixa.png" 
-                    alt="CAIXA" 
-                    fill 
-                    className="object-contain" 
-                  />
+                  <Image src="/img/logo-caixa.png" alt="CAIXA" fill className="object-contain" />
                 </div>
               </div>
 
@@ -110,10 +98,13 @@ export default function Footer({ onOpenWhatsapp }: { onOpenWhatsapp?: () => void
             </p>
           </div>
 
-          {/* Copyright e Links */}
+          {/* Copyright e Links Modais */}
           <div className="border-t border-gray-200 pt-6 text-center">
             <p className="text-[11px] sm:text-xs text-gray-400 font-medium">
-              © 2026 | Lumini 3 | <a href="#termos" className="font-bold hover:text-[#7629BB] transition-colors">Termos de Uso</a> e <a href="#privacidade" className="font-bold hover:text-[#7629BB] transition-colors">Política de Privacidade</a>
+              © 2026 | Lumini 3 |{" "}
+              <button onClick={handlePrivacidadeClick} className="font-bold hover:text-[#7629BB] transition-colors underline cursor-pointer">
+                Termos de Uso e Política de Privacidade
+              </button>
             </p>
           </div>
 
@@ -143,7 +134,8 @@ export default function Footer({ onOpenWhatsapp }: { onOpenWhatsapp?: () => void
         <div className="max-w-[1440px] mx-auto flex flex-row items-stretch justify-center h-auto md:h-20 divide-x divide-white/20">
           
           <a 
-            href="tel:+551141644000" 
+            href="#whatsapp" 
+            onClick={handleWhatsappClick}
             className="md:hidden flex-1 flex items-center justify-center gap-3 text-white hover:bg-white/10 transition-colors py-4 md:py-0 group px-2"
           >
             <svg className="w-6 h-6 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">

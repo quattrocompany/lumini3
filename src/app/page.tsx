@@ -16,7 +16,7 @@ import SecaoPlantas from "@/components/SecaoPlantas";
 import SecaoMobilidadeUrbana from "@/components/SecaoMobilidadeUrbana";
 import Footer from "@/components/Footer";
 import CookieBanner from "@/components/CookieBanner";
-import ModalWhatsapp from "@/components/ModalWhatsapp"; // <--- Novo Componente
+import ModalWhatsapp from "@/components/ModalWhatsapp";
 
 const montserrat = Montserrat({ 
   subsets: ["latin"], 
@@ -55,12 +55,21 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Ouvinte global para abrir o modal via Evento Customizado
+  // Ouvintes globais para abrir os modais via Eventos Customizados
   useEffect(() => {
-    const handleOpenWhatsappModal = () => openModal("whatsapp");
-    window.addEventListener("openWhatsAppModal", handleOpenWhatsappModal);
+    const handleOpenWhatsapp = () => openModal("whatsapp");
+    const handleOpenPrivacidade = () => openModal("privacidade");
+    const handleOpenLgpd = () => openModal("lgpd");
+
+    window.addEventListener("openWhatsAppModal", handleOpenWhatsapp);
+    window.addEventListener("openPrivacidadeModal", handleOpenPrivacidade);
+    window.addEventListener("openLgpdModal", handleOpenLgpd);
     
-    return () => window.removeEventListener("openWhatsAppModal", handleOpenWhatsappModal);
+    return () => {
+      window.removeEventListener("openWhatsAppModal", handleOpenWhatsapp);
+      window.removeEventListener("openPrivacidadeModal", handleOpenPrivacidade);
+      window.removeEventListener("openLgpdModal", handleOpenLgpd);
+    };
   }, []);
 
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
@@ -206,10 +215,14 @@ export default function Home() {
       </div>
 
       <div id="nav-realizacao">
-        <Footer onOpenWhatsapp={() => openModal("whatsapp")} />
+        <Footer 
+          onOpenWhatsapp={() => openModal("whatsapp")} 
+          onOpenPrivacidade={() => openModal("privacidade")} 
+          onOpenLgpd={() => openModal("lgpd")} 
+        />
       </div>
 
-      {/* ================= NOVO MODAL WHATSAPP COMPONENTIZADO ================= */}
+      {/* ================= MODAL WHATSAPP COMPONENTIZADO ================= */}
       <ModalWhatsapp isOpen={activeModal === "whatsapp"} onClose={closeModal} />
 
       {/* ================= MODAIS LEGAIS (LGPD / Privacidade) ================= */}
@@ -243,7 +256,7 @@ export default function Home() {
               <>
                 <h2 className="text-2xl font-black text-[#4A137B] uppercase mb-6">POLÍTICA DE DADOS LGPD</h2>
                 <p className="text-gray-600 leading-relaxed text-justify mb-4 font-medium text-sm">
-                  Nos comprometemos a nunca compartilhar seus dados com terceiros. Os dados aqui captados (Nome, E-mail e Telefone) serão utilizados única e exclusivamente pela incorporadora responsável por esse empreendimento para que seja possível o contato com o cliente e apresentação dos produtos vinculados à marca da Incorporadora ou pertencentes ao mesmo grupo econômico da Vendedora.
+                  Nos comprometemos a nunca compartilhar seus dados com terceiros. Os dados aqui captados (Nome, E-mail e Telefone) serão utilizados única e exclusivamente pela incorporadora responsável por esse empreendimento para que seja possível o contato com el cliente e apresentação dos produtos vinculados à marca da Incorporadora ou pertencentes ao mesmo grupo econômico da Vendedora.
                 </p>
                 <p className="text-gray-600 leading-relaxed text-justify mb-4 font-medium text-sm">
                   O nosso site pode ter links para sites externos que não são operados por nós. Esteja ciente de que não temos controle sobre o conteúdo e práticas desses sites e não podemos aceitar responsabilidade por suas respectivas políticas de privacidade.
