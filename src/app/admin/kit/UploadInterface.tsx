@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { upload } from "@vercel/blob/client";
 
 interface ItemKit {
   id: string;
@@ -61,28 +62,19 @@ export default function UploadInterface() {
     }
   };
 
-  // Envio de arquivos com validação rígida de erro no servidor
+  // Envio direto do navegador para o Vercel Blob (evita o limite de 4.5MB das Serverless Functions)
   const handleUpload = async () => {
     if (novosArquivos.length === 0) return;
     setUploading(true);
 
     try {
       for (const item of novosArquivos) {
-        const formData = new FormData();
-        formData.append("file", item.file);
-        formData.append("categoria", item.categoria);
-        formData.append("dataUpload", dataSelecao);
+        const pathname = `kit/${dataSelecao}/${item.categoria}/${item.file.name}`;
 
-        const res = await fetch("/api/admin/upload", {
-          method: "POST",
-          body: formData,
+        await upload(pathname, item.file, {
+          access: "public",
+          handleUploadUrl: "/api/admin/upload",
         });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || `Erro ${res.status}: Não foi possível salvar o arquivo.`);
-        }
       }
 
       alert("Arquivos publicados e salvos com sucesso!");
