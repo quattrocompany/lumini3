@@ -5,11 +5,15 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    // Busca todos os arquivos que começam com "kit/"
-    const { blobs } = await list({ prefix: "kit/" });
+    const token = process.env.BLOB_READ_WRITE_TOKEN;
+    
+    // Passando o token explicitamente
+    const { blobs } = await list({ 
+      prefix: "kit/",
+      token: token 
+    });
 
     const items = blobs.map((blob) => {
-      // O pathname é: kit/{dataUpload}/{categoria}/{filename}
       const parts = blob.pathname.split("/");
       const dataUpload = parts[1] || "";
       const categoria = parts[2] || "imagem_avulsa";

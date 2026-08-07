@@ -12,28 +12,39 @@ interface ItemKit {
   dataUpload: string;
 }
 
+// Imagens padrão de fallback (exibidas quando o Vercel Blob estiver vazio)
+const imagensPadraoFallback: ItemKit[] = [
+  { id: "f1", url: "/img/01.jpg", nome: "Fachada", categoria: "imagem_avulsa", tamanho: "3.2 MB", dataUpload: "2026-08-07" },
+  { id: "f2", url: "/img/02.jpg", nome: "Portaria Central", categoria: "imagem_avulsa", tamanho: "2.8 MB", dataUpload: "2026-08-07" },
+  { id: "f3", url: "/img/03.jpg", nome: "Piscina Adulto", categoria: "imagem_avulsa", tamanho: "4.1 MB", dataUpload: "2026-08-07" },
+  { id: "f4", url: "/img/04.jpg", nome: "Espaço Grill", categoria: "imagem_avulsa", tamanho: "3.5 MB", dataUpload: "2026-08-07" },
+];
+
 export default function KitCorretorPage() {
   const [itens, setItens] = useState<ItemKit[]>([]);
   const [dataFiltro, setDataFiltro] = useState<string>("todas");
   const [loading, setLoading] = useState(true);
 
-  // Busca os arquivos reais do Vercel Blob via API
+  // Busca arquivos do Vercel Blob ou usa o Fallback
   useEffect(() => {
     async function carregarKit() {
       try {
         const res = await fetch("/api/kit");
         const data = await res.json();
-        if (data.items) {
+        
+        if (data.items && data.items.length > 0) {
           setItens(data.items);
-          
-          // Define a aba do filtro automaticamente para a data mais recente
           const datas = Array.from(new Set(data.items.map((i: ItemKit) => i.dataUpload))).sort().reverse();
           if (datas.length > 0) {
             setDataFiltro(datas[0] as string);
           }
+        } else {
+          // Se o Blob não tiver imagens ainda, carrega as imagens padrão
+          setItens(imagensPadraoFallback);
         }
       } catch (e) {
-        console.error("Erro ao carregar kit:", e);
+        console.error("Erro ao carregar do servidor, utilizando imagens padrão:", e);
+        setItens(imagensPadraoFallback);
       } finally {
         setLoading(false);
       }
@@ -43,7 +54,7 @@ export default function KitCorretorPage() {
 
   const datasDisponiveis = Array.from(new Set(itens.map((i) => i.dataUpload))).sort().reverse();
 
-  // Filtra itens pela data selecionada no select
+  // Filtra itens por data
   const itensFiltrados = itens.filter((i) => {
     if (dataFiltro === "todas") return true;
     return i.dataUpload === dataFiltro;
@@ -58,7 +69,7 @@ export default function KitCorretorPage() {
     <main className="min-h-screen bg-gray-50 flex flex-col justify-between">
       
       <div>
-        {/* TESTEIRA / BANNER SUPERIOR COM A IMAGEM */}
+        {/* BANNER SUPERIOR */}
         <div className="w-full relative z-10 pt-16 sm:pt-0 bg-[#551078]">
           <div className="relative w-full max-w-[1920px] mx-auto">
             <Image
@@ -114,6 +125,7 @@ export default function KitCorretorPage() {
           {/* BOXES DE DOWNLOADS SEPARADOS */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
+            {/* Box 1: ZIP */}
             <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-shadow flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-[#1E293B]/10 text-[#1E293B] rounded-full flex items-center justify-center mb-6">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -133,6 +145,7 @@ export default function KitCorretorPage() {
               )}
             </div>
 
+            {/* Box 2: PDF */}
             <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-shadow flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-[#1E293B]/10 text-[#1E293B] rounded-full flex items-center justify-center mb-6">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -152,6 +165,7 @@ export default function KitCorretorPage() {
               )}
             </div>
 
+            {/* Box 3: VÍDEOS */}
             <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-shadow flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-[#1E293B]/10 text-[#1E293B] rounded-full flex items-center justify-center mb-6">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -202,7 +216,7 @@ export default function KitCorretorPage() {
             </div>
 
             {loading ? (
-              <p className="text-center py-10 text-gray-400 font-medium">Carregando imagens do servidor...</p>
+              <p className="text-center py-10 text-gray-400 font-medium">Carregando imagens...</p>
             ) : imagensAvulsas.length === 0 ? (
               <p className="text-center py-10 text-gray-400 font-medium">Nenhuma imagem avulsa encontrada para esta data.</p>
             ) : (

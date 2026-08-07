@@ -22,13 +22,13 @@ export default function UploadInterface() {
   const [loadingList, setLoadingList] = useState(true);
   const [filtroDataAdmin, setFiltroDataAdmin] = useState<string>("todas");
 
-  // Carrega arquivos reais publicados no Blob
+  // Carrega a lista real de arquivos
   const carregarArquivos = async () => {
     setLoadingList(true);
     try {
       const res = await fetch("/api/kit");
       const data = await res.json();
-      if (data.items) {
+      if (res.ok && data.items) {
         setItensCadastrados(data.items);
       }
     } catch (e) {
@@ -61,7 +61,7 @@ export default function UploadInterface() {
     }
   };
 
-  // Envia cada arquivo real para a API do Vercel Blob
+  // Envio de arquivos com validação rígida de erro no servidor
   const handleUpload = async () => {
     if (novosArquivos.length === 0) return;
     setUploading(true);
@@ -73,18 +73,24 @@ export default function UploadInterface() {
         formData.append("categoria", item.categoria);
         formData.append("dataUpload", dataSelecao);
 
-        await fetch("/api/admin/upload", {
+        const res = await fetch("/api/admin/upload", {
           method: "POST",
           body: formData,
         });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || `Erro ${res.status}: Não foi possível salvar o arquivo.`);
+        }
       }
 
-      alert("Todos os arquivos foram publicados com sucesso no Vercel Blob!");
+      alert("Arquivos publicados e salvos com sucesso!");
       setNovosArquivos([]);
-      carregarArquivos();
-    } catch (err) {
-      console.error(err);
-      alert("Erro ao realizar o upload dos arquivos.");
+      await carregarArquivos();
+    } catch (err: any) {
+      console.error("Falha no upload:", err);
+      alert(`Atenção: ${err.message || "Erro ao realizar o upload."}`);
     } finally {
       setUploading(false);
     }
@@ -93,19 +99,23 @@ export default function UploadInterface() {
   const handleDeletar = async (url: string) => {
     if (confirm("Tem certeza que deseja apagar este arquivo do servidor?")) {
       try {
-        await fetch("/api/admin/delete", {
+        const res = await fetch("/api/admin/delete", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url }),
         });
-        carregarArquivos();
+
+        if (res.ok) {
+          await carregarArquivos();
+        } else {
+          alert("Erro ao excluir o arquivo.");
+        }
       } catch (err) {
-        alert("Erro ao excluir arquivo.");
+        alert("Erro de conexão ao tentar excluir.");
       }
     }
   };
 
-  // Extrai datas únicas para o filtro
   const datasDisponiveis = Array.from(
     new Set(itensCadastrados.map((i) => i.dataUpload))
   );
@@ -118,7 +128,7 @@ export default function UploadInterface() {
   return (
     <div className="space-y-10">
       
-      {/* SEÇÃO 1: UPLOAD */}
+      {/* SEÇÃO 1: UPLOAD EM LOTE */}
       <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-6 border-b border-gray-100">
           <div>

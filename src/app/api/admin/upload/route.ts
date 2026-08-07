@@ -3,6 +3,15 @@ import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
+    const token = process.env.BLOB_READ_WRITE_TOKEN;
+
+    if (!token) {
+      return NextResponse.json(
+        { error: "Token do Vercel Blob não encontrado (.env.local)." },
+        { status: 500 }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const categoria = formData.get("categoria") as string;
@@ -10,24 +19,25 @@ export async function POST(request: Request) {
 
     if (!file || !categoria || !dataUpload) {
       return NextResponse.json(
-        { error: "Arquivo ou informações pendentes." },
+        { error: "Arquivo ou informações pendentes na requisição." },
         { status: 400 }
       );
     }
 
-    // Salva o arquivo no Vercel Blob com a estrutura de pasta: kit/DATA/CATEGORIA/NOME
     const pathname = `kit/${dataUpload}/${categoria}/${file.name}`;
     
+    // Passando o token explicitamente ignora a restrição OIDC de ambiente local
     const blob = await put(pathname, file, {
       access: "public",
       addRandomSuffix: false,
+      token: token, 
     });
 
     return NextResponse.json(blob);
-  } catch (error) {
-    console.error("Erro no servidor de upload:", error);
+  } catch (error: any) {
+    console.error("Erro no upload do Vercel Blob:", error);
     return NextResponse.json(
-      { error: "Erro ao processar o upload no Vercel Blob." },
+      { error: error?.message || "Erro interno no servidor de upload." },
       { status: 500 }
     );
   }
