@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface ItemKit {
   id: string;
   nome: string;
-  categoria: "pacote_zip" | "lamina_pdf" | "imagem_avulsa" | "video";
+  categoria: string;
   url: string;
   tamanho: string;
   dataUpload: string;
@@ -16,30 +16,31 @@ export default function UploadInterface() {
     new Date().toISOString().split("T")[0]
   );
   
-  const [itensCadastrados, setItensCadastrados] = useState<ItemKit[]>([
-    {
-      id: "1",
-      nome: "Imagens_Lumini3_HD.zip",
-      categoria: "pacote_zip",
-      url: "#",
-      tamanho: "38.5 MB",
-      dataUpload: "2026-08-07",
-    },
-    {
-      id: "2",
-      nome: "Apresentacao_Lumini3.pdf",
-      categoria: "lamina_pdf",
-      url: "#",
-      tamanho: "11.2 MB",
-      dataUpload: "2026-08-07",
-    },
-  ]);
-
-  const [novosArquivos, setNovosArquivos] = useState<
-    { file: File; categoria: string }[]
-  >([]);
+  const [itensCadastrados, setItensCadastrados] = useState<ItemKit[]>([]);
+  const [novosArquivos, setNovosArquivos] = useState<{ file: File; categoria: string }[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [loadingList, setLoadingList] = useState(true);
   const [filtroDataAdmin, setFiltroDataAdmin] = useState<string>("todas");
+
+  // Carrega arquivos reais publicados no Blob
+  const carregarArquivos = async () => {
+    setLoadingList(true);
+    try {
+      const res = await fetch("/api/kit");
+      const data = await res.json();
+      if (data.items) {
+        setItensCadastrados(data.items);
+      }
+    } catch (e) {
+      console.error("Erro ao carregar arquivos:", e);
+    } finally {
+      setLoadingList(false);
+    }
+  };
+
+  useEffect(() => {
+    carregarArquivos();
+  }, []);
 
   const autoDetectarCategoria = (filename: string) => {
     const ext = filename.split(".").pop()?.toLowerCase();
@@ -60,32 +61,54 @@ export default function UploadInterface() {
     }
   };
 
-  const handleUpload = () => {
+  // Envia cada arquivo real para a API do Vercel Blob
+  const handleUpload = async () => {
     if (novosArquivos.length === 0) return;
     setUploading(true);
 
-    setTimeout(() => {
-      const novosItensCadastrados: ItemKit[] = novosArquivos.map((item, index) => ({
-        id: Date.now().toString() + index,
-        nome: item.file.name,
-        categoria: item.categoria as any,
-        url: "#",
-        tamanho: `${(item.file.size / 1024 / 1024).toFixed(1)} MB`,
-        dataUpload: dataSelecao,
-      }));
+    try {
+      for (const item of novosArquivos) {
+        const formData = new FormData();
+        formData.append("file", item.file);
+        formData.append("categoria", item.categoria);
+        formData.append("dataUpload", dataSelecao);
 
-      setItensCadastrados((prev) => [...novosItensCadastrados, ...prev]);
+        await fetch("/api/admin/upload", {
+          method: "POST",
+          body: formData,
+        });
+      }
+
+      alert("Todos os arquivos foram publicados com sucesso no Vercel Blob!");
       setNovosArquivos([]);
+      carregarArquivos();
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao realizar o upload dos arquivos.");
+    } finally {
       setUploading(false);
-      alert("Arquivos enviados com sucesso!");
-    }, 1200);
-  };
-
-  const handleDeletar = (id: string) => {
-    if (confirm("Deseja excluir este arquivo do Kit Corretor?")) {
-      setItensCadastrados((prev) => prev.filter((item) => item.id !== id));
     }
   };
+
+  const handleDeletar = async (url: string) => {
+    if (confirm("Tem certeza que deseja apagar este arquivo do servidor?")) {
+      try {
+        await fetch("/api/admin/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url }),
+        });
+        carregarArquivos();
+      } catch (err) {
+        alert("Erro ao excluir arquivo.");
+      }
+    }
+  };
+
+  // Extrai datas únicas para o filtro
+  const datasDisponiveis = Array.from(
+    new Set(itensCadastrados.map((i) => i.dataUpload))
+  );
 
   const itensFiltradosAdmin = itensCadastrados.filter((item) => {
     if (filtroDataAdmin === "todas") return true;
@@ -100,7 +123,7 @@ export default function UploadInterface() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-6 border-b border-gray-100">
           <div>
             <h2 className="text-xl font-bold text-gray-800">1. Novo Upload em Lote</h2>
-            <p className="text-sm text-gray-500">Selecione a data de publicação da semana e suba os arquivos.</p>
+            <p className="text-sm text-gray-500">Selecione a data e envie os arquivos para a Vercel.</p>
           </div>
           <div className="flex items-center gap-3">
             <label className="text-sm font-semibold text-gray-700">Data da Versão:</label>
@@ -132,7 +155,7 @@ export default function UploadInterface() {
         {novosArquivos.length > 0 && (
           <div className="mt-6 border-t pt-4">
             <h3 className="text-sm font-bold text-gray-700 mb-3">
-              {novosArquivos.length} arquivo(s) selecionado(s):
+              {novosArquivos.length} arquivo(s) pronto(s) para enviar:
             </h3>
             <div className="space-y-2 max-h-48 overflow-y-auto mb-4">
               {novosArquivos.map((item, idx) => (
@@ -150,7 +173,7 @@ export default function UploadInterface() {
               disabled={uploading}
               className="w-full bg-[#DD6810] text-white font-bold py-3 rounded-lg hover:bg-[#c45a0d] transition-colors cursor-pointer disabled:opacity-50"
             >
-              {uploading ? "Publicando Arquivos..." : "Confirmar e Publicar Todos"}
+              {uploading ? "Publicando no Vercel Blob..." : "Confirmar e Publicar Todos"}
             </button>
           </div>
         )}
@@ -161,7 +184,7 @@ export default function UploadInterface() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
             <h2 className="text-xl font-bold text-gray-800">2. Materiais Publicados</h2>
-            <p className="text-sm text-gray-500">Gerencie ou exclua arquivos do histórico.</p>
+            <p className="text-sm text-gray-500">Gerencie ou exclua arquivos do histórico no servidor.</p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -172,46 +195,64 @@ export default function UploadInterface() {
               className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-bold text-gray-700 focus:outline-none"
             >
               <option value="todas">Todas as Datas</option>
-              <option value="2026-08-07">2026-08-07 (Atual)</option>
+              {datasDisponiveis.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
             </select>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-gray-600">
-            <thead className="bg-gray-100 text-gray-700 uppercase text-[10px] tracking-wider">
-              <tr>
-                <th className="p-3">Nome do Arquivo</th>
-                <th className="p-3">Categoria</th>
-                <th className="p-3">Data</th>
-                <th className="p-3">Tamanho</th>
-                <th className="p-3 text-right">Ação</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {itensFiltradosAdmin.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50">
-                  <td className="p-3 font-semibold text-gray-800 truncate max-w-[200px]">{item.nome}</td>
-                  <td className="p-3">
-                    <span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
-                      {item.categoria.replace("_", " ")}
-                    </span>
-                  </td>
-                  <td className="p-3 font-medium text-gray-500">{item.dataUpload}</td>
-                  <td className="p-3 text-gray-400">{item.tamanho}</td>
-                  <td className="p-3 text-right">
-                    <button
-                      onClick={() => handleDeletar(item.id)}
-                      className="text-red-500 hover:text-red-700 font-bold hover:underline cursor-pointer"
-                    >
-                      Excluir
-                    </button>
-                  </td>
+        {loadingList ? (
+          <p className="text-sm text-gray-500 text-center py-6">Carregando arquivos do servidor...</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-gray-600">
+              <thead className="bg-gray-100 text-gray-700 uppercase text-[10px] tracking-wider">
+                <tr>
+                  <th className="p-3">Nome do Arquivo</th>
+                  <th className="p-3">Categoria</th>
+                  <th className="p-3">Data</th>
+                  <th className="p-3">Tamanho</th>
+                  <th className="p-3 text-right">Ação</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {itensFiltradosAdmin.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="p-6 text-center text-gray-400">
+                      Nenhum arquivo publicado até o momento.
+                    </td>
+                  </tr>
+                ) : (
+                  itensFiltradosAdmin.map((item) => (
+                    <tr key={item.id} className="hover:bg-gray-50">
+                      <td className="p-3 font-semibold text-gray-800 truncate max-w-[200px]">
+                        <a href={item.url} target="_blank" rel="noopener noreferrer" className="hover:underline text-[#1E293B]">
+                          {item.nome}
+                        </a>
+                      </td>
+                      <td className="p-3">
+                        <span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
+                          {item.categoria.replace("_", " ")}
+                        </span>
+                      </td>
+                      <td className="p-3 font-medium text-gray-500">{item.dataUpload}</td>
+                      <td className="p-3 text-gray-400">{item.tamanho}</td>
+                      <td className="p-3 text-right">
+                        <button
+                          onClick={() => handleDeletar(item.url)}
+                          className="text-red-500 hover:text-red-700 font-bold hover:underline cursor-pointer"
+                        >
+                          Excluir
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
     </div>
