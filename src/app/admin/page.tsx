@@ -123,9 +123,9 @@ export default function AdminLoginPage() {
 
       {/* RODAPÉ */}
       <div className="w-full bg-[#1E293B] text-white mt-16 md:mt-24">
-        <div className="w-full bg-[#DD6810] py-8 px-6 text-center text-white">
+        <div className="w-full bg-[#7641d2] py-8 px-6 text-center text-white">
           <p className="text-xs sm:text-sm font-medium tracking-wide text-white/95">
-            © 2026 | Termos de Uso e Política de Privacidade
+            Quattro Inc © 2026 | Termos de Uso e Política de Privacidade
           </p>
         </div>
       </div>

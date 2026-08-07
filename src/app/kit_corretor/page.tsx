@@ -258,15 +258,23 @@ export default function KitCorretorPage() {
         {/* Bloco de Informações - Roxo Escuro (#310b65) */}
         <div className="w-full bg-[#310b65] py-16 px-6 text-center text-white">
           <div className="max-w-3xl mx-auto flex flex-col items-center">
-            <h3 className="text-3xl md:text-4xl font-black mb-4 uppercase tracking-wide">
-              Lumini
-            </h3>
+            
+            {/* LOGO EM VEZ DO TEXTO LUMINI */}
+            <div className="relative w-48 sm:w-64 h-16 md:h-20 mb-4">
+              <Image
+                src="/img/logowhite.png"
+                alt="Logo Lumini"
+                fill
+                className="object-contain"
+              />
+            </div>
+
             <p className="text-white/95 mb-8 text-sm md:text-base max-w-lg font-medium">
               Acompanhe nossas redes sociais oficiais e acesse o site para ficar por dentro de todas as novidades, campanhas e materiais de divulgação!
             </p>
             
             <div className="flex flex-col sm:flex-row items-center gap-4 justify-center">
-              {/* Botão Site em Laranja (#DD6810) */}
+              {/* Botão Site */}
               <a
                 href="#"
                 target="_blank"
@@ -309,10 +317,10 @@ export default function KitCorretorPage() {
           />
         </div>
 
-        {/* BARRA DE DIREITOS - Lilás (#7955aa) */}
+        {/* BARRA DE DIREITOS */}
         <div className="w-full bg-[#ffffff] py-8 px-6 text-center text-white relative z-10">
           <p className="text-xs sm:text-sm font-bold tracking-wide text-[#8810dd]">
-            © 2026 Lumini | Termos de Uso e Política de Privacidade
+            Quattro Inc © 2026 Lumini Clube Residencial | Termos de Uso e Política de Privacidade
           </p>
         </div>
       </div>
