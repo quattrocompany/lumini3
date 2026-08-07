@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 export default function AdminLoginPage() {
@@ -9,7 +8,6 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -39,8 +37,7 @@ export default function AdminLoginPage() {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        router.push("/admin/kit");
-        router.refresh();
+        window.location.replace("/admin/kit");
       } else {
         setError(data.message || "Usuário ou senha inválidos.");
         setLoading(false);
@@ -52,7 +49,6 @@ export default function AdminLoginPage() {
     }
   };
 
-  // Permite logar apertando "Enter"
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       handleLogin();
@@ -62,12 +58,12 @@ export default function AdminLoginPage() {
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col justify-between">
       <div>
-        {/* BANNER SUPERIOR */}
-        <div className="w-full relative z-10 pt-16 sm:pt-20 bg-[#4c0f82] pb-8 flex items-center justify-center shadow-md">
+        {/* BANNER SUPERIOR LUMINI */}
+        <div className="w-full relative z-10 pt-16 sm:pt-20 bg-[#551078] pb-8 flex items-center justify-center shadow-md">
           <div className="relative w-64 sm:w-80 md:w-96 h-24 sm:h-32">
             <Image
               src="/img/logowhite.png"
-              alt="Logo"
+              alt="Logo Lumini"
               fill
               className="object-contain"
               priority
@@ -75,7 +71,7 @@ export default function AdminLoginPage() {
           </div>
         </div>
 
-        {/* ÁREA DE LOGIN (Sem a tag form para evitar o recarregamento com "?") */}
+        {/* ÁREA DE LOGIN */}
         <div className="flex items-center justify-center p-6 py-16">
           <div className="bg-white p-8 md:p-12 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
             <h1 className="text-2xl font-bold text-[#1E293B] text-center mb-2">Painel da Agência</h1>
@@ -89,7 +85,7 @@ export default function AdminLoginPage() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:border-[#1E293B] focus:ring-1 focus:ring-[#1E293B] text-gray-800"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:border-[#8810dd] focus:ring-1 focus:ring-[#8810dd] text-gray-800"
                   placeholder="Digite seu usuário"
                 />
               </div>
@@ -101,7 +97,7 @@ export default function AdminLoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:border-[#1E293B] focus:ring-1 focus:ring-[#1E293B] text-gray-800"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:border-[#8810dd] focus:ring-1 focus:ring-[#8810dd] text-gray-800"
                   placeholder="Digite sua senha"
                 />
               </div>
@@ -121,13 +117,11 @@ export default function AdminLoginPage() {
         </div>
       </div>
 
-      {/* RODAPÉ */}
-      <div className="w-full bg-[#1E293B] text-white mt-16 md:mt-24">
-        <div className="w-full bg-[#7641d2] py-8 px-6 text-center text-white">
-          <p className="text-xs sm:text-sm font-medium tracking-wide text-white/95">
-            Quattro Inc © 2026 | Termos de Uso e Política de Privacidade
-          </p>
-        </div>
+      {/* RODAPÉ LUMINI */}
+      <div className="w-full bg-[#ffffff] border-t border-gray-200 py-8 px-6 text-center mt-16 md:mt-24">
+        <p className="text-xs sm:text-sm font-bold tracking-wide text-[#8810dd]">
+          Quattro Inc © 2026 | Termos de Uso e Política de Privacidade
+        </p>
       </div>
     </main>
   );
