@@ -9,14 +9,14 @@ export async function POST(request: Request) {
 
     if (username === "vendrix" && password === "GAuys87H98*71ts") {
       const cookieStore = await cookies();
-      
-      // Configuração de cookie compatível com HTTP local e HTTPS de produção
+
+      // Força secure: false para funcionar 100% no http://localhost
       cookieStore.set("admin_session", "autenticado", {
         path: "/",
         httpOnly: true,
-        secure: process.env.VERCEL_ENV === "production", // Ativa secure apenas quando publicado na Vercel
+        secure: false,
         sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 7, // 7 dias
+        maxAge: 60 * 60 * 24 * 7,
       });
 
       return NextResponse.json({ success: true });
@@ -27,9 +27,9 @@ export async function POST(request: Request) {
       { status: 401 }
     );
   } catch (error) {
-    console.error("Erro no endpoint de login:", error);
+    console.error("Erro no servidor de login:", error);
     return NextResponse.json(
-      { success: false, message: "Erro interno no servidor de login." },
+      { success: false, message: "Erro interno no servidor." },
       { status: 500 }
     );
   }
