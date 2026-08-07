@@ -224,13 +224,13 @@ export default function KitCorretorPage() {
                 {imagensAvulsas.map((img) => (
                   <div key={img.id} className="group relative aspect-square rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-gray-200">
                     <Image
-                      src={img.url}
-                      alt={img.nome}
-                      fill
-                      unoptimized
-                      sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                      className="object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
+  src={img.url}
+  alt={img.nome}
+  fill
+  unoptimized
+  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+  className="object-cover group-hover:scale-110 transition-transform duration-500"
+/>
                     
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-4">
                       <span className="text-white font-bold mb-4 text-center text-xs md:text-sm px-2 truncate w-full">
