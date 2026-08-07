@@ -2,9 +2,9 @@ import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request): Promise<NextResponse> {
-  const body = (await request.json()) as HandleUploadBody;
-
   try {
+    const body = (await request.json()) as HandleUploadBody;
+
     const jsonResponse = await handleUpload({
       body,
       request,
@@ -26,13 +26,13 @@ export async function POST(request: Request): Promise<NextResponse> {
         };
       },
       onUploadCompleted: async ({ blob }) => {
-        console.log("Upload do Vercel Blob (Lumini 3) concluído:", blob.url);
+        console.log("Upload do Vercel Blob concluído:", blob.url);
       },
     });
 
     return NextResponse.json(jsonResponse);
   } catch (error: any) {
-    console.error("Erro na geração do token de upload (Lumini 3):", error);
+    console.error("Erro na API de upload:", error);
     return NextResponse.json(
       { error: error?.message || "Erro interno no servidor de upload." },
       { status: 400 }
