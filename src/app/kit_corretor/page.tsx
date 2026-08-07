@@ -271,7 +271,7 @@ export default function KitCorretorPage() {
                 href="#"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-[#DD6810] hover:bg-[#c45a0d] text-white px-8 py-3.5 rounded-full font-bold text-sm transition-all shadow-lg flex items-center gap-2 hover:scale-105"
+                className="bg-[#8f3ba7] hover:bg-[#440dc4] text-white px-8 py-3.5 rounded-full font-bold text-sm transition-all shadow-lg flex items-center gap-2 hover:scale-105"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
@@ -310,8 +310,8 @@ export default function KitCorretorPage() {
         </div>
 
         {/* BARRA DE DIREITOS - Lilás (#7955aa) */}
-        <div className="w-full bg-[#7955aa] py-8 px-6 text-center text-white relative z-10">
-          <p className="text-xs sm:text-sm font-bold tracking-wide text-white">
+        <div className="w-full bg-[#ffffff] py-8 px-6 text-center text-white relative z-10">
+          <p className="text-xs sm:text-sm font-bold tracking-wide text-[#8810dd]">
             © 2026 Lumini | Termos de Uso e Política de Privacidade
           </p>
         </div>
