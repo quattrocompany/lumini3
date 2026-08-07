@@ -12,7 +12,6 @@ interface ItemKit {
   dataUpload: string;
 }
 
-// Imagens padrão de fallback (exibidas quando o Vercel Blob estiver vazio)
 const imagensPadraoFallback: ItemKit[] = [
   { id: "f1", url: "/img/01.jpg", nome: "Fachada", categoria: "imagem_avulsa", tamanho: "3.2 MB", dataUpload: "2026-08-07" },
   { id: "f2", url: "/img/02.jpg", nome: "Portaria Central", categoria: "imagem_avulsa", tamanho: "2.8 MB", dataUpload: "2026-08-07" },
@@ -25,7 +24,6 @@ export default function KitCorretorPage() {
   const [dataFiltro, setDataFiltro] = useState<string>("todas");
   const [loading, setLoading] = useState(true);
 
-  // Busca arquivos do Vercel Blob ou usa o Fallback
   useEffect(() => {
     async function carregarKit() {
       try {
@@ -39,7 +37,6 @@ export default function KitCorretorPage() {
             setDataFiltro(datas[0] as string);
           }
         } else {
-          // Se o Blob não tiver imagens ainda, carrega as imagens padrão
           setItens(imagensPadraoFallback);
         }
       } catch (e) {
@@ -54,7 +51,6 @@ export default function KitCorretorPage() {
 
   const datasDisponiveis = Array.from(new Set(itens.map((i) => i.dataUpload))).sort().reverse();
 
-  // Filtra itens por data
   const itensFiltrados = itens.filter((i) => {
     if (dataFiltro === "todas") return true;
     return i.dataUpload === dataFiltro;
@@ -69,12 +65,12 @@ export default function KitCorretorPage() {
     <main className="min-h-screen bg-gray-50 flex flex-col justify-between">
       
       <div>
-        {/* BANNER SUPERIOR */}
+        {/* BANNER SUPERIOR LUMINI */}
         <div className="w-full relative z-10 pt-16 sm:pt-0 bg-[#551078]">
           <div className="relative w-full max-w-[1920px] mx-auto">
             <Image
               src="/img/testeira.jpg"
-              alt="Kit Corretor"
+              alt="Kit Corretor Lumini"
               width={1920}
               height={350}
               quality={100}
@@ -239,7 +235,7 @@ export default function KitCorretorPage() {
                       <a
                         href={img.url}
                         download
-                        className="bg-[#DD6810] text-white p-3 rounded-full hover:bg-white hover:text-[#590dc4] transition-colors transform hover:scale-110 shadow-lg"
+                        className="bg-[#DD6810] text-white p-3 rounded-full hover:bg-white hover:text-[#8810dd] transition-colors transform hover:scale-110 shadow-lg"
                         title={`Baixar ${img.nome}`}
                       >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -252,16 +248,71 @@ export default function KitCorretorPage() {
               </div>
             )}
           </div>
-        
-        {/* Fechamento da div max-w-[1200px] e da div que engloba o topo até a galeria */}
+          
         </div>
       </div>
 
-      {/* RODAPÉ */}
-      <div className="w-full bg-[#310b65] pt-12 md:pt-16 text-white mt-16 md:mt-24">
-        <div className="w-full bg-[#7955aa] py-8 px-6 text-center text-white">
-          <p className="text-xs sm:text-sm font-medium tracking-wide text-white/95">
-            © 2026 | Termos de Uso e Política de Privacidade
+      {/* RODAPÉ E CONTATOS LUMINI */}
+      <div className="w-full mt-16 md:mt-24 flex flex-col">
+        
+        {/* Bloco de Informações - Roxo Escuro (#310b65) */}
+        <div className="w-full bg-[#310b65] py-16 px-6 text-center text-white">
+          <div className="max-w-3xl mx-auto flex flex-col items-center">
+            <h3 className="text-3xl md:text-4xl font-black mb-4 uppercase tracking-wide">
+              Lumini
+            </h3>
+            <p className="text-white/95 mb-8 text-sm md:text-base max-w-lg font-medium">
+              Acompanhe nossas redes sociais oficiais e acesse o site para ficar por dentro de todas as novidades, campanhas e materiais de divulgação!
+            </p>
+            
+            <div className="flex flex-col sm:flex-row items-center gap-4 justify-center">
+              {/* Botão Site em Laranja (#DD6810) */}
+              <a
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-[#DD6810] hover:bg-[#c45a0d] text-white px-8 py-3.5 rounded-full font-bold text-sm transition-all shadow-lg flex items-center gap-2 hover:scale-105"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                </svg>
+                Acessar Site Oficial
+              </a>
+
+              {/* Redes Sociais */}
+              <div className="flex items-center gap-3 mt-2 sm:mt-0">
+                <a href="#" target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-white/10 hover:bg-[#DD6810] flex items-center justify-center transition-all hover:scale-110 shadow-lg" title="Instagram">
+                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+                  </svg>
+                </a>
+                <a href="#" target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-white/10 hover:bg-[#DD6810] flex items-center justify-center transition-all hover:scale-110 shadow-lg" title="Facebook">
+                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Imagem do Rodapé - Proporção Natural Full Width */}
+        <div className="w-full relative">
+          <Image
+            src="/img/rodapé_corretor.jpg"
+            alt="Lumini Rodapé"
+            width={1920}
+            height={600}
+            quality={100}
+            className="w-full h-auto block object-cover"
+            priority
+          />
+        </div>
+
+        {/* BARRA DE DIREITOS - Lilás (#7955aa) */}
+        <div className="w-full bg-[#7955aa] py-8 px-6 text-center text-white relative z-10">
+          <p className="text-xs sm:text-sm font-bold tracking-wide text-white">
+            © 2026 Lumini | Termos de Uso e Política de Privacidade
           </p>
         </div>
       </div>
