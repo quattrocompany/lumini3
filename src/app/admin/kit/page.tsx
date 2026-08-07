@@ -14,7 +14,7 @@ export default async function AdminKitPage() {
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col justify-between">
       <div>
-        {/* BANNER SUPERIOR LUMINI */}
+        {/* BANNER SUPERIOR LUMINI 3 */}
         <div className="w-full relative z-10 pt-16 sm:pt-20 bg-[#551078] pb-8 flex items-center justify-center shadow-md">
           <div className="relative w-64 sm:w-80 md:w-96 h-24 sm:h-32">
             <Image
@@ -42,7 +42,7 @@ export default async function AdminKitPage() {
         </div>
       </div>
 
-      {/* RODAPÉ LUMINI */}
+      {/* RODAPÉ LUMINI 3 */}
       <div className="w-full bg-[#ffffff] border-t border-gray-200 py-8 px-6 text-center mt-16 md:mt-24">
         <p className="text-xs sm:text-sm font-bold tracking-wide text-[#8810dd]">
           Quattro Inc © 2026 | Termos de Uso e Política de Privacidade
