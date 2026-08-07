@@ -16,16 +16,26 @@ export default function AdminLoginPage() {
     setLoading(true);
     setError("");
 
-    const res = await fetch("/api/admin/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          username: username.trim(), 
+          password: password.trim() 
+        }),
+      });
 
-    if (res.ok) {
-      router.push("/admin/kit");
-    } else {
-      setError("Usuário ou senha inválidos.");
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        router.push("/admin/kit");
+      } else {
+        setError(data.message || "Usuário ou senha inválidos.");
+        setLoading(false);
+      }
+    } catch (err) {
+      setError("Erro de conexão. Tente novamente.");
       setLoading(false);
     }
   };
@@ -36,7 +46,7 @@ export default function AdminLoginPage() {
         <div className="w-full relative z-10 pt-16 sm:pt-20 bg-[#1E293B] pb-8 flex items-center justify-center shadow-md">
           <div className="relative w-64 sm:w-80 md:w-96 h-24 sm:h-32">
             <Image
-              src="/img/Hero/logo.png"
+              src="/img/logowhite.png"
               alt="Lumini 3"
               fill
               className="object-contain"

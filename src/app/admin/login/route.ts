@@ -4,16 +4,22 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { username, password } = body;
+    
+    // .trim() remove espaços acidentais no início ou fim
+    const username = body.username?.trim();
+    const password = body.password?.trim();
 
-    // Credenciais exclusivas da agência para Lumini 3
+    // Credenciais exclusivas da agência
     if (username === "vendrix" && password === "GAuys87H98*71ts") {
-      cookies().set("admin_session", "autenticado_lumini", {
+      const cookieStore = await cookies();
+      
+      cookieStore.set("admin_session", "autenticado_lumini", {
         path: "/",
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        maxAge: 60 * 60 * 24 * 7,
+        maxAge: 60 * 60 * 24 * 7, // 7 dias logado
       });
+
       return NextResponse.json({ success: true });
     }
 
@@ -22,6 +28,10 @@ export async function POST(request: Request) {
       { status: 401 }
     );
   } catch (error) {
-    return NextResponse.json({ success: false }, { status: 500 });
+    console.error("Erro no servidor ao realizar login:", error);
+    return NextResponse.json(
+      { success: false, message: "Erro ao processar login no servidor." },
+      { status: 500 }
+    );
   }
 }
