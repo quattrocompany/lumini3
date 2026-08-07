@@ -188,7 +188,7 @@ export default function KitCorretorPage() {
 
           </div>
 
-          {/* GALERIA DE IMAGENS AVULSAS */}
+          {/* GALERIA DE IMAGENS AVULSAS (PROPORÇÃO 9:16) */}
           <div className="mt-20 border-t border-gray-200 pt-16">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-10">
               <div className="text-center sm:text-left">
@@ -220,17 +220,17 @@ export default function KitCorretorPage() {
             ) : imagensAvulsas.length === 0 ? (
               <p className="text-center py-10 text-gray-400 font-medium">Nenhuma imagem avulsa encontrada para esta data.</p>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
                 {imagensAvulsas.map((img) => (
-                  <div key={img.id} className="group relative aspect-square rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-gray-200">
+                  <div key={img.id} className="group relative aspect-[9/16] rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-gray-200 bg-gray-100">
                     <Image
-  src={img.url}
-  alt={img.nome}
-  fill
-  unoptimized
-  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-  className="object-cover group-hover:scale-110 transition-transform duration-500"
-/>
+                      src={img.url}
+                      alt={img.nome}
+                      fill
+                      unoptimized
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 20vw"
+                      className="object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
                     
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-4">
                       <span className="text-white font-bold mb-4 text-center text-xs md:text-sm px-2 truncate w-full">
@@ -252,7 +252,8 @@ export default function KitCorretorPage() {
               </div>
             )}
           </div>
-          
+        
+        {/* Fechamento da div max-w-[1200px] e da div que engloba o topo até a galeria */}
         </div>
       </div>
 
