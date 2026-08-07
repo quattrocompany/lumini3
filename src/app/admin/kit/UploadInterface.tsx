@@ -256,7 +256,6 @@ export default function UploadInterface() {
           </div>
         )}
       </div>
-
     </div>
   );
 }
