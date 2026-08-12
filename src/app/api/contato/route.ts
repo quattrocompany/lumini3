@@ -82,7 +82,7 @@ export async function POST(request: Request) {
 
           await transporter.sendMail({
             from: `"Site Lumini 3" <${process.env.SMTP_USER}>`,
-            to: process.env.SMTP_USER,
+            to: "estandenovacalifornia@gmail.com",
             replyTo: email,
             subject: `Novo Lead - Lumini 3 (${isWhatsapp ? "WhatsApp" : "Formulário"}): ${nome}`,
             html: `
