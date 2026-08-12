@@ -71,7 +71,7 @@ export async function POST(request: Request) {
     if (process.env.RESEND_API_KEY) {
       try {
         const { data: emailData, error: emailErr } = await resend.emails.send({
-          from: "Site Lumini 3 <contato@novacalifornia.com.br>",
+          from: "Site Lumini 3 <contato@lumini3.com.br>",
           to: ["estandelumini@gmail.com"],
           replyTo: (email && email.includes("@")) ? email : undefined,
           subject: `Novo Lead - Lumini 3 (${isWhatsapp ? "WhatsApp" : "Formulário"}): ${nome}`,
