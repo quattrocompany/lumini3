@@ -10,19 +10,50 @@ export default function SecaoContato() {
   const [isMounted, setIsMounted] = useState(false);
   const recaptchaRef = useRef<ReCAPTCHA>(null);
 
-  // Evita erro de hidratação e garante que o Recaptcha só renderize no cliente
+  // Estado controlado dos campos do formulário
+  const [formData, setFormData] = useState({
+    nome: "",
+    email: "",
+    telefone: "",
+    mensagem: "",
+  });
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Chave pública do reCAPTCHA do Lumini 3
   const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "6LedSHgtAAAAAPcAN_QO8ylKsyE3iJ7wH7X_gn37";
+
+  // Máscara dinâmica de telefone
+  const maskPhone = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 11);
+    if (!digits) return "";
+    if (digits.length <= 2) return `(${digits}`;
+    if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    if (digits.length <= 10) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    }
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 3)} ${digits.slice(3, 7)}-${digits.slice(7)}`;
+  };
+
+  // Higieniza o e-mail
+  const sanitizeEmail = (email: string) => {
+    return email.trim().toLowerCase().replace(/,/g, ".");
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    if (name === "telefone") {
+      setFormData((prev) => ({ ...prev, telefone: maskPhone(value) }));
+    } else if (name === "email") {
+      setFormData((prev) => ({ ...prev, email: sanitizeEmail(value) }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
-    // Salva a referência do formulário antes da execução assíncrona
-    const form = e.currentTarget;
 
     if (!captchaToken) {
       alert("Por favor, confirme que você não é um robô.");
@@ -30,12 +61,14 @@ export default function SecaoContato() {
     }
 
     setStatus("loading");
-    const formData = new FormData(form);
-    const data = {
-      nome: formData.get("nome"),
-      email: formData.get("email"),
-      telefone: formData.get("telefone"),
-      mensagem: formData.get("mensagem"),
+
+    const emailLimpo = sanitizeEmail(formData.email);
+
+    const payload = {
+      nome: formData.nome,
+      email: emailLimpo,
+      telefone: formData.telefone,
+      mensagem: formData.mensagem,
       captcha: captchaToken,
     };
 
@@ -43,12 +76,12 @@ export default function SecaoContato() {
       const response = await fetch("/api/contato", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
         setStatus("success");
-        form.reset(); // Reseta usando a referência salva
+        setFormData({ nome: "", email: "", telefone: "", mensagem: "" });
         recaptchaRef.current?.reset();
         setCaptchaToken(null);
       } else {
@@ -78,7 +111,7 @@ export default function SecaoContato() {
                 </svg>
                 <h4 className="text-xl font-bold text-[#4A137B] mb-2">Mensagem enviada!</h4>
                 <p className="text-gray-600 font-medium">Em breve entraremos em contato.</p>
-                <button onClick={() => setStatus("idle")} className="mt-6 text-[#7629BB] font-bold hover:underline">
+                <button onClick={() => setStatus("idle")} className="mt-6 text-[#7629BB] font-bold hover:underline cursor-pointer">
                   Enviar nova mensagem
                 </button>
               </div>
@@ -92,6 +125,8 @@ export default function SecaoContato() {
                     type="text" 
                     placeholder="Nome*" 
                     required 
+                    value={formData.nome}
+                    onChange={handleChange}
                     className="w-full bg-white border-none rounded-full px-6 py-4 text-sm outline-none focus:ring-4 focus:ring-[#7629BB]/30 transition-all font-medium text-gray-800 placeholder-gray-400 shadow-sm"
                   />
                 </div>
@@ -104,6 +139,8 @@ export default function SecaoContato() {
                     type="email" 
                     placeholder="E-mail*" 
                     required 
+                    value={formData.email}
+                    onChange={handleChange}
                     className="w-full bg-white border-none rounded-full px-6 py-4 text-sm outline-none focus:ring-4 focus:ring-[#7629BB]/30 transition-all font-medium text-gray-800 placeholder-gray-400 shadow-sm"
                   />
                 </div>
@@ -116,6 +153,8 @@ export default function SecaoContato() {
                     type="tel" 
                     placeholder="Telefone*" 
                     required 
+                    value={formData.telefone}
+                    onChange={handleChange}
                     className="w-full bg-white border-none rounded-full px-6 py-4 text-sm outline-none focus:ring-4 focus:ring-[#7629BB]/30 transition-all font-medium text-gray-800 placeholder-gray-400 shadow-sm"
                   />
                 </div>
@@ -128,6 +167,8 @@ export default function SecaoContato() {
                     rows={4}
                     placeholder="Mensagem*" 
                     required 
+                    value={formData.mensagem}
+                    onChange={handleChange}
                     className="w-full bg-white border-none rounded-3xl px-6 py-4 text-sm outline-none focus:ring-4 focus:ring-[#7629BB]/30 transition-all font-medium text-gray-800 placeholder-gray-400 shadow-sm resize-none"
                   />
                 </div>
@@ -147,7 +188,7 @@ export default function SecaoContato() {
                   <button 
                     type="submit" 
                     disabled={status === "loading"}
-                    className="w-full sm:w-auto bg-[#7629BB] hover:bg-[#4A137B] disabled:bg-gray-400 disabled:cursor-not-allowed text-[#FFFFFF] font-black text-base uppercase tracking-widest px-12 py-4 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl active:scale-95 h-[78px]"
+                    className="w-full sm:w-auto bg-[#7629BB] hover:bg-[#4A137B] disabled:bg-gray-400 disabled:cursor-not-allowed text-[#FFFFFF] font-black text-base uppercase tracking-widest px-12 py-4 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl active:scale-95 h-[78px] cursor-pointer"
                   >
                     {status === "loading" ? "ENVIANDO..." : "ENVIAR"}
                   </button>
