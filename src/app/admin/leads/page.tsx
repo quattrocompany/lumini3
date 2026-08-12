@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { useState } from "react";
 import { formatarDataBrasilia } from "@/lib/utils";
 
 interface Lead {
@@ -16,35 +15,46 @@ interface Lead {
 
 export default function PaginaLeads() {
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [senha, setSenha] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [senhaInput, setSenhaInput] = useState("");
+  const [senhaGuardada, setSenhaGuardada] = useState("");
   const [autenticado, setAutenticado] = useState(false);
+  const [erro, setErro] = useState("");
 
-  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-
-  const buscarLeads = async () => {
+  const buscarLeads = async (senhaParaUsar?: string) => {
     setLoading(true);
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    setErro("");
 
-    const { data, error } = await supabase
-      .from("leads")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const senha = senhaParaUsar || senhaGuardada;
 
-    if (error) {
-      console.error("Erro ao buscar leads:", error);
-    } else {
-      setLeads(data || []);
+    try {
+      const res = await fetch("/api/admin/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ senha }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Erro ao carregar os dados.");
+      }
+
+      setLeads(data.leads || []);
+      setAutenticado(true);
+      if (senhaParaUsar) setSenhaGuardada(senhaParaUsar);
+    } catch (err: any) {
+      setErro(err.message || "Senha incorreta ou erro de conexão.");
+      setAutenticado(false);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  useEffect(() => {
-    if (autenticado) {
-      buscarLeads();
-    }
-  }, [autenticado]);
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    buscarLeads(senhaInput);
+  };
 
   const exportarCSV = () => {
     if (leads.length === 0) return;
@@ -77,34 +87,28 @@ export default function PaginaLeads() {
     document.body.removeChild(link);
   };
 
-  // Trava de senha simples
+  // Modal de login simples
   if (!autenticado) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
         <div className="bg-white p-8 rounded-2xl shadow-md max-w-sm w-full text-center">
           <h2 className="text-xl font-bold text-[#4A137B] mb-4">Painel Lumini 3</h2>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (senha === "Lumini2026!") { // Defina a senha desejada
-                setAutenticado(true);
-              } else {
-                alert("Senha incorreta!");
-              }
-            }}
-          >
+          <form onSubmit={handleLogin}>
             <input
               type="password"
               placeholder="Digite a senha de acesso"
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm mb-4 outline-none focus:border-[#7629BB]"
+              value={senhaInput}
+              onChange={(e) => setSenhaInput(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm mb-3 outline-none focus:border-[#7629BB]"
+              required
             />
+            {erro && <p className="text-red-500 text-xs font-semibold mb-3">{erro}</p>}
             <button
               type="submit"
-              className="w-full bg-[#7629BB] hover:bg-[#4A137B] text-white font-bold py-2.5 rounded-lg transition-colors text-sm cursor-pointer"
+              disabled={loading}
+              className="w-full bg-[#7629BB] hover:bg-[#4A137B] disabled:bg-gray-400 text-white font-bold py-2.5 rounded-lg transition-colors text-sm cursor-pointer"
             >
-              Acessar
+              {loading ? "Verificando..." : "Acessar"}
             </button>
           </form>
         </div>
@@ -123,10 +127,11 @@ export default function PaginaLeads() {
 
           <div className="flex gap-3">
             <button
-              onClick={buscarLeads}
-              className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold px-4 py-2.5 rounded-lg text-sm transition-colors cursor-pointer"
+              onClick={() => buscarLeads()}
+              disabled={loading}
+              className="bg-gray-200 hover:bg-gray-300 disabled:opacity-50 text-gray-700 font-semibold px-4 py-2.5 rounded-lg text-sm transition-colors cursor-pointer"
             >
-              Atualizar
+              {loading ? "Atualizando..." : "Atualizar"}
             </button>
             <button
               onClick={exportarCSV}
