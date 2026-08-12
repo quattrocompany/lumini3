@@ -86,7 +86,7 @@ export default function PaginaLeads() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (senha === "lumini2026") { // Defina a senha desejada
+              if (senha === "Lumini2026!") { // Defina a senha desejada
                 setAutenticado(true);
               } else {
                 alert("Senha incorreta!");
