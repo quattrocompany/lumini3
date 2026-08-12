@@ -73,7 +73,16 @@ export default function ModalWhatsapp({ isOpen, onClose }: ModalWhatsappProps) {
       });
     }
 
-    const mensagemTexto = encodeURIComponent(`Olá! Meu nome é ${formData.name}. Gostaria de mais informações sobre o Lumini 3.`);
+    // MENSAGEM COM DADOS COMPLETOS PARA O WHATSAPP DO LUMINI 3
+    const textoMensagem = 
+`Olá! Gostaria de mais informações sobre o Lumini 3.
+
+*Dados de contato:*
+• *Nome:* ${formData.name}
+• *E-mail:* ${emailLimpo}
+• *Telefone:* ${formData.whatsapp}`;
+
+    const mensagemTexto = encodeURIComponent(textoMensagem);
     const waUrl = `https://api.whatsapp.com/send?phone=551141644000&text=${mensagemTexto}`;
 
     setFormData({ name: "", email: "", whatsapp: "" });
@@ -81,7 +90,7 @@ export default function ModalWhatsapp({ isOpen, onClose }: ModalWhatsappProps) {
     onClose();
 
     if (typeof window !== "undefined") {
-      window.location.href = waUrl;
+      window.open(waUrl, "_blank");
     }
   };
 
@@ -161,7 +170,7 @@ export default function ModalWhatsapp({ isOpen, onClose }: ModalWhatsappProps) {
             <button 
               type="submit" 
               disabled={isSubmitting}
-              className="w-full bg-[#25D366] hover:bg-[#1DA851] disabled:bg-gray-400 text-white font-bold py-3 px-6 rounded-full transition-colors uppercase tracking-wider text-sm shadow-md flex items-center justify-center gap-2"
+              className="w-full bg-[#25D366] hover:bg-[#1DA851] disabled:bg-gray-400 text-white font-bold py-3 px-6 rounded-full transition-colors uppercase tracking-wider text-sm shadow-md flex items-center justify-center gap-2 cursor-pointer"
             >
               {!isSubmitting && (
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -173,7 +182,7 @@ export default function ModalWhatsapp({ isOpen, onClose }: ModalWhatsappProps) {
             <button 
               type="button" 
               onClick={onClose}
-              className="w-full bg-[#EF4444] hover:bg-red-600 text-white font-bold py-3 px-6 rounded-full transition-colors uppercase tracking-wider text-sm shadow-md"
+              className="w-full bg-[#EF4444] hover:bg-red-600 text-white font-bold py-3 px-6 rounded-full transition-colors uppercase tracking-wider text-sm shadow-md cursor-pointer"
             >
               Fechar
             </button>

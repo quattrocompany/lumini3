@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: Request) {
   try {
@@ -11,7 +13,7 @@ export async function POST(request: Request) {
 
     console.log(">>> NOVO LEAD LUMINI 3 RECEBIDO:", { nome, email, telefone, via });
 
-    const isWhatsapp = via === "whatsapp" || mensagem === "Contato via modal WhatsApp";
+    const isWhatsapp = via === "whatsapp" || via === "modal_whatsapp" || mensagem === "Contato via modal WhatsApp";
 
     // 1. Tentar validar reCAPTCHA (Apenas se NÃO for WhatsApp e tiver captcha)
     if (!isWhatsapp && captcha && process.env.RECAPTCHA_SECRET_KEY) {
@@ -39,7 +41,7 @@ export async function POST(request: Request) {
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-      console.error(">>> ERRO: Variaveis do Supabase nao configuradas.");
+      console.error(">>> ERRO: Variáveis do Supabase não configuradas.");
       return NextResponse.json({ error: "Configuração do banco ausente." }, { status: 500 });
     }
 
@@ -65,42 +67,36 @@ export async function POST(request: Request) {
 
     console.log(">>> LEAD SALVO NO SUPABASE COM SUCESSO:", dbData);
 
-    // 3. Enviar E-mail via Nodemailer em segundo plano
-    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-      (async () => {
-        try {
-          const transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST,
-            port: Number(process.env.SMTP_PORT) || 465,
-            secure: Number(process.env.SMTP_PORT) === 465,
-            auth: {
-              user: process.env.SMTP_USER,
-              pass: process.env.SMTP_PASS,
-            },
-            connectionTimeout: 5000,
-          });
+    // 3. Enviar E-mail via Resend API
+    if (process.env.RESEND_API_KEY) {
+      try {
+        const { data: emailData, error: emailErr } = await resend.emails.send({
+          from: "Site Lumini 3 <contato@novacalifornia.com.br>",
+          to: ["estandelumini@gmail.com"],
+          replyTo: (email && email.includes("@")) ? email : undefined,
+          subject: `Novo Lead - Lumini 3 (${isWhatsapp ? "WhatsApp" : "Formulário"}): ${nome}`,
+          html: `
+            <h2>Novo contato recebido pelo site Lumini 3</h2>
+            <p><strong>Nome:</strong> ${nome}</p>
+            <p><strong>E-mail:</strong> ${email}</p>
+            <p><strong>Telefone:</strong> ${telefone}</p>
+            <p><strong>Origem:</strong> ${isWhatsapp ? "Atendimento WhatsApp" : "Formulário de Contato"}</p>
+            <br/>
+            <p><strong>Mensagem:</strong></p>
+            <p>${(mensagem || "").replace(/\n/g, "<br/>")}</p>
+          `,
+        });
 
-          await transporter.sendMail({
-            from: `"Site Lumini 3" <${process.env.SMTP_USER}>`,
-            to: "estandenovacalifornia@gmail.com",
-            replyTo: email,
-            subject: `Novo Lead - Lumini 3 (${isWhatsapp ? "WhatsApp" : "Formulário"}): ${nome}`,
-            html: `
-              <h2>Novo contato recebido pelo site Lumini 3</h2>
-              <p><strong>Nome:</strong> ${nome}</p>
-              <p><strong>E-mail:</strong> ${email}</p>
-              <p><strong>Telefone:</strong> ${telefone}</p>
-              <p><strong>Origem:</strong> ${isWhatsapp ? "Atendimento WhatsApp" : "Formulário de Contato"}</p>
-              <br/>
-              <p><strong>Mensagem:</strong></p>
-              <p>${(mensagem || "").replace(/\n/g, "<br/>")}</p>
-            `,
-          });
-          console.log(">>> E-MAIL ENVIADO COM SUCESSO");
-        } catch (emailErr) {
-          console.error(">>> AVISO ENVIO DE EMAIL (SMTP):", emailErr);
+        if (emailErr) {
+          console.error(">>> ERRO RESEND:", emailErr);
+        } else {
+          console.log(">>> E-MAIL DISPARADO VIA RESEND COM SUCESSO:", emailData);
         }
-      })();
+      } catch (resendError) {
+        console.error(">>> ERRO EXCEÇÃO RESEND:", resendError);
+      }
+    } else {
+      console.warn(">>> AVISO: RESEND_API_KEY ausente nas variáveis de ambiente.");
     }
 
     return NextResponse.json({ success: true, message: "Lead processado com sucesso!", data: dbData }, { status: 200 });
