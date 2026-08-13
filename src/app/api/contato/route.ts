@@ -99,6 +99,34 @@ export async function POST(request: Request) {
       console.warn(">>> AVISO: RESEND_API_KEY ausente nas variáveis de ambiente.");
     }
 
+    // 4. Enviar Lead para o Webhook da Exent
+    try {
+      const webhookUrl = "https://hub.exent.com.br/api/webhook/inbound/2f3589584fd671a0cc24";
+
+      const webhookPayload = {
+        nome: nome || "Não informado",
+        email: email || "Não informado",
+        telefone: telefone || "Não informado",
+        mensagem: mensagem || (isWhatsapp ? "Contato via modal WhatsApp" : "Contato via site Lumini 3"),
+        origem: isWhatsapp ? "WhatsApp Modal - Lumini 3" : "Formulário de Contato - Lumini 3",
+        data_cadastro: new Date().toISOString(),
+      };
+
+      const webhookRes = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(webhookPayload),
+      });
+
+      if (webhookRes.ok) {
+        console.log(">>> WEBHOOK EXENT DISPARADO COM SUCESSO");
+      } else {
+        console.error(">>> ERRO NO WEBHOOK EXENT. Status:", webhookRes.status);
+      }
+    } catch (webhookErr) {
+      console.error(">>> ERRO DE EXCEÇÃO NO WEBHOOK EXENT:", webhookErr);
+    }
+
     return NextResponse.json({ success: true, message: "Lead processado com sucesso!", data: dbData }, { status: 200 });
   } catch (error: any) {
     console.error(">>> ERRO GERAL API:", error);
