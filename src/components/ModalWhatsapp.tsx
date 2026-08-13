@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface ModalWhatsappProps {
   isOpen: boolean;
@@ -8,13 +9,13 @@ interface ModalWhatsappProps {
 }
 
 export default function ModalWhatsapp({ isOpen, onClose }: ModalWhatsappProps) {
+  const router = useRouter();
   const [formData, setFormData] = useState({ name: "", email: "", whatsapp: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailError, setEmailError] = useState("");
 
   if (!isOpen) return null;
 
-  // Máscara dinâmica: (11) 4164-4000 ou (11) 9 9999-9999
   const maskPhone = (value: string) => {
     const digits = value.replace(/\D/g, "").slice(0, 11);
     if (!digits) return "";
@@ -26,12 +27,10 @@ export default function ModalWhatsapp({ isOpen, onClose }: ModalWhatsappProps) {
     return `(${digits.slice(0, 2)}) ${digits.slice(2, 3)} ${digits.slice(3, 7)}-${digits.slice(7)}`;
   };
 
-  // Substitui vírgula por ponto, remove espaços e passa para minúsculo
   const sanitizeEmail = (email: string) => {
     return email.trim().toLowerCase().replace(/,/g, ".");
   };
 
-  // Validação da estrutura do e-mail
   const isValidEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
     return emailRegex.test(email);
@@ -73,7 +72,6 @@ export default function ModalWhatsapp({ isOpen, onClose }: ModalWhatsappProps) {
       });
     }
 
-    // MENSAGEM COM DADOS COMPLETOS PARA O WHATSAPP DO LUMINI 3
     const textoMensagem = 
 `Olá! Gostaria de mais informações sobre o Lumini 3.
 
@@ -89,9 +87,8 @@ export default function ModalWhatsapp({ isOpen, onClose }: ModalWhatsappProps) {
     setIsSubmitting(false);
     onClose();
 
-    if (typeof window !== "undefined") {
-      window.open(waUrl, "_blank");
-    }
+    // Redireciona para a página intermediária passando a URL do WhatsApp
+    router.push(`/confirmacao-whatsapp?waUrl=${encodeURIComponent(waUrl)}`);
   };
 
   return (

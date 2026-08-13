@@ -3,14 +3,15 @@
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
+import { useRouter } from "next/navigation";
 
 export default function SecaoContato() {
+  const router = useRouter();
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const recaptchaRef = useRef<ReCAPTCHA>(null);
 
-  // Estado controlado dos campos do formulário
   const [formData, setFormData] = useState({
     nome: "",
     email: "",
@@ -24,7 +25,6 @@ export default function SecaoContato() {
 
   const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "6LedSHgtAAAAAPcAN_QO8ylKsyE3iJ7wH7X_gn37";
 
-  // Máscara dinâmica de telefone
   const maskPhone = (value: string) => {
     const digits = value.replace(/\D/g, "").slice(0, 11);
     if (!digits) return "";
@@ -36,7 +36,6 @@ export default function SecaoContato() {
     return `(${digits.slice(0, 2)}) ${digits.slice(2, 3)} ${digits.slice(3, 7)}-${digits.slice(7)}`;
   };
 
-  // Higieniza o e-mail
   const sanitizeEmail = (email: string) => {
     return email.trim().toLowerCase().replace(/,/g, ".");
   };
@@ -80,10 +79,23 @@ export default function SecaoContato() {
       });
 
       if (response.ok) {
-        setStatus("success");
+        if (typeof window !== "undefined" && (window as any).dataLayer) {
+          (window as any).dataLayer.push({ 
+            event: "form_contato", 
+            lead_data: {
+              nome: payload.nome,
+              email: payload.email,
+              telefone: payload.telefone
+            }
+          });
+        }
+
         setFormData({ nome: "", email: "", telefone: "", mensagem: "" });
         recaptchaRef.current?.reset();
         setCaptchaToken(null);
+
+        // Redireciona para a página de confirmação
+        router.push("/confirmacao-contato");
       } else {
         setStatus("error");
       }
@@ -104,102 +116,89 @@ export default function SecaoContato() {
               CADASTRE-SE E RECEBA EM PRIMEIRA MÃO TODAS AS INFORMAÇÕES:
             </h3>
 
-            {status === "success" ? (
-              <div className="bg-white/90 p-8 rounded-3xl text-center shadow-md border border-green-100">
-                <svg className="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                </svg>
-                <h4 className="text-xl font-bold text-[#4A137B] mb-2">Mensagem enviada!</h4>
-                <p className="text-gray-600 font-medium">Em breve entraremos em contato.</p>
-                <button onClick={() => setStatus("idle")} className="mt-6 text-[#7629BB] font-bold hover:underline cursor-pointer">
-                  Enviar nova mensagem
+            <form onSubmit={handleSubmit} className="space-y-4 w-full">
+              <div>
+                <label htmlFor="lead-nome" className="sr-only">Nome*</label>
+                <input 
+                  id="lead-nome"
+                  name="nome"
+                  type="text" 
+                  placeholder="Nome*" 
+                  required 
+                  value={formData.nome}
+                  onChange={handleChange}
+                  className="w-full bg-white border-none rounded-full px-6 py-4 text-sm outline-none focus:ring-4 focus:ring-[#7629BB]/30 transition-all font-medium text-gray-800 placeholder-gray-400 shadow-sm"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="lead-email" className="sr-only">E-mail*</label>
+                <input 
+                  id="lead-email"
+                  name="email"
+                  type="email" 
+                  placeholder="E-mail*" 
+                  required 
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="w-full bg-white border-none rounded-full px-6 py-4 text-sm outline-none focus:ring-4 focus:ring-[#7629BB]/30 transition-all font-medium text-gray-800 placeholder-gray-400 shadow-sm"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="lead-tel" className="sr-only">Telefone*</label>
+                <input 
+                  id="lead-tel"
+                  name="telefone"
+                  type="tel" 
+                  placeholder="Telefone*" 
+                  required 
+                  value={formData.telefone}
+                  onChange={handleChange}
+                  className="w-full bg-white border-none rounded-full px-6 py-4 text-sm outline-none focus:ring-4 focus:ring-[#7629BB]/30 transition-all font-medium text-gray-800 placeholder-gray-400 shadow-sm"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="lead-msg" className="sr-only">Mensagem*</label>
+                <textarea 
+                  id="lead-msg"
+                  name="mensagem"
+                  rows={4}
+                  placeholder="Mensagem*" 
+                  required 
+                  value={formData.mensagem}
+                  onChange={handleChange}
+                  className="w-full bg-white border-none rounded-3xl px-6 py-4 text-sm outline-none focus:ring-4 focus:ring-[#7629BB]/30 transition-all font-medium text-gray-800 placeholder-gray-400 shadow-sm resize-none"
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+                <div className="w-full sm:w-auto flex justify-center min-h-[78px] min-w-[304px]">
+                  {isMounted && (
+                    <ReCAPTCHA
+                      ref={recaptchaRef}
+                      sitekey={SITE_KEY}
+                      onChange={(token) => setCaptchaToken(token)}
+                      hl="pt-BR"
+                    />
+                  )}
+                </div>
+
+                <button 
+                  type="submit" 
+                  disabled={status === "loading"}
+                  className="w-full sm:w-auto bg-[#7629BB] hover:bg-[#4A137B] disabled:bg-gray-400 disabled:cursor-not-allowed text-[#FFFFFF] font-black text-base uppercase tracking-widest px-12 py-4 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl active:scale-95 h-[78px] cursor-pointer"
+                >
+                  {status === "loading" ? "ENVIANDO..." : "ENVIAR"}
                 </button>
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-4 w-full">
-                <div>
-                  <label htmlFor="lead-nome" className="sr-only">Nome*</label>
-                  <input 
-                    id="lead-nome"
-                    name="nome"
-                    type="text" 
-                    placeholder="Nome*" 
-                    required 
-                    value={formData.nome}
-                    onChange={handleChange}
-                    className="w-full bg-white border-none rounded-full px-6 py-4 text-sm outline-none focus:ring-4 focus:ring-[#7629BB]/30 transition-all font-medium text-gray-800 placeholder-gray-400 shadow-sm"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="lead-email" className="sr-only">E-mail*</label>
-                  <input 
-                    id="lead-email"
-                    name="email"
-                    type="email" 
-                    placeholder="E-mail*" 
-                    required 
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="w-full bg-white border-none rounded-full px-6 py-4 text-sm outline-none focus:ring-4 focus:ring-[#7629BB]/30 transition-all font-medium text-gray-800 placeholder-gray-400 shadow-sm"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="lead-tel" className="sr-only">Telefone*</label>
-                  <input 
-                    id="lead-tel"
-                    name="telefone"
-                    type="tel" 
-                    placeholder="Telefone*" 
-                    required 
-                    value={formData.telefone}
-                    onChange={handleChange}
-                    className="w-full bg-white border-none rounded-full px-6 py-4 text-sm outline-none focus:ring-4 focus:ring-[#7629BB]/30 transition-all font-medium text-gray-800 placeholder-gray-400 shadow-sm"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="lead-msg" className="sr-only">Mensagem*</label>
-                  <textarea 
-                    id="lead-msg"
-                    name="mensagem"
-                    rows={4}
-                    placeholder="Mensagem*" 
-                    required 
-                    value={formData.mensagem}
-                    onChange={handleChange}
-                    className="w-full bg-white border-none rounded-3xl px-6 py-4 text-sm outline-none focus:ring-4 focus:ring-[#7629BB]/30 transition-all font-medium text-gray-800 placeholder-gray-400 shadow-sm resize-none"
-                  />
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-                  <div className="w-full sm:w-auto flex justify-center min-h-[78px] min-w-[304px]">
-                    {isMounted && (
-                      <ReCAPTCHA
-                        ref={recaptchaRef}
-                        sitekey={SITE_KEY}
-                        onChange={(token) => setCaptchaToken(token)}
-                        hl="pt-BR"
-                      />
-                    )}
-                  </div>
-
-                  <button 
-                    type="submit" 
-                    disabled={status === "loading"}
-                    className="w-full sm:w-auto bg-[#7629BB] hover:bg-[#4A137B] disabled:bg-gray-400 disabled:cursor-not-allowed text-[#FFFFFF] font-black text-base uppercase tracking-widest px-12 py-4 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl active:scale-95 h-[78px] cursor-pointer"
-                  >
-                    {status === "loading" ? "ENVIANDO..." : "ENVIAR"}
-                  </button>
-                </div>
-                {status === "error" && (
-                  <p className="text-red-600 text-sm font-bold text-center mt-2">
-                    Ocorreu um erro ao enviar. Tente novamente.
-                  </p>
-                )}
-              </form>
-            )}
+              {status === "error" && (
+                <p className="text-red-600 text-sm font-bold text-center mt-2">
+                  Ocorreu um erro ao enviar. Tente novamente.
+                </p>
+              )}
+            </form>
           </div>
 
           <div className="relative w-full lg:w-5/12 flex flex-col justify-end overflow-visible min-h-[300px] sm:min-h-[400px] lg:min-h-[320px] order-2 lg:order-1 mt-0">
