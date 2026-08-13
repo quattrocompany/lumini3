@@ -9,9 +9,9 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { nome, email, telefone, mensagem, captcha, via } = body;
+    const { nome, email, telefone, mensagem, captcha, via, utms } = body;
 
-    console.log(">>> NOVO LEAD LUMINI 3 RECEBIDO:", { nome, email, telefone, via });
+    console.log(">>> NOVO LEAD LUMINI 3 RECEBIDO:", { nome, email, telefone, via, utms });
 
     const isWhatsapp = via === "whatsapp" || via === "modal_whatsapp" || mensagem === "Contato via modal WhatsApp";
 
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
       console.warn(">>> AVISO: RESEND_API_KEY ausente nas variáveis de ambiente.");
     }
 
-    // 4. Enviar Lead para o Webhook da Exent
+    // 4. Enviar Lead para o Webhook da Exent (com UTMs)
     try {
       const webhookUrl = "https://hub.exent.com.br/api/webhook/inbound/2f3589584fd671a0cc24";
 
@@ -110,6 +110,11 @@ export async function POST(request: Request) {
         mensagem: mensagem || (isWhatsapp ? "Contato via modal WhatsApp" : "Contato via site Lumini 3"),
         origem: isWhatsapp ? "WhatsApp Modal - Lumini 3" : "Formulário de Contato - Lumini 3",
         data_cadastro: new Date().toISOString(),
+        utm_source: utms?.source || "",
+        utm_medium: utms?.medium || "",
+        utm_campaign: utms?.campaign || "",
+        utm_content: utms?.content || "",
+        utm_term: utms?.term || "",
       };
 
       const webhookRes = await fetch(webhookUrl, {
