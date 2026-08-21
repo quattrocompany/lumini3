@@ -1,20 +1,31 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+// Usuários e senhas autorizados
+const VALID_USERS: Record<string, string> = {
+  vendrix: "GAuys87H98*71ts",
+  marketing: "Ricco9885*",
+};
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const username = body.username?.toString().trim();
+    let username = body.username?.toString().trim().toLowerCase();
     const password = body.password?.toString().trim();
 
-    if (username === "vendrix" && password === "GAuys87H98*71ts") {
+    // Remove o sufixo de e-mail caso o usuário digite com @ (ex: marketing@vendrix.com -> marketing)
+    if (username && username.includes("@")) {
+      username = username.split("@")[0];
+    }
+
+    // Valida se o usuário existe e a senha corresponde
+    if (username && VALID_USERS[username] === password) {
       const cookieStore = await cookies();
 
-      // Força secure: false para funcionar 100% no http://localhost
       cookieStore.set("admin_session", "autenticado", {
         path: "/",
         httpOnly: true,
-        secure: false,
+        secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         maxAge: 60 * 60 * 24 * 7,
       });
