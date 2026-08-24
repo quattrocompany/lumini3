@@ -9,6 +9,7 @@ import {
   listAll,
   deleteObject,
   getMetadata,
+  updateMetadata, // <-- Adicionado para permitir edição
 } from "firebase/storage";
 
 interface ItemKit {
@@ -86,6 +87,9 @@ export default function UploadInterface() {
   const [progresso, setProgresso] = useState<number>(0);
   const [loadingList, setLoadingList] = useState(true);
   const [filtroDataAdmin, setFiltroDataAdmin] = useState<string>("todas");
+  
+  // Novo estado para rastrear os arquivos selecionados nos checkboxes
+  const [selecionados, setSelecionados] = useState<string[]>([]);
 
   const carregarArquivos = async () => {
     setLoadingList(true);
@@ -160,9 +164,7 @@ export default function UploadInterface() {
       let concluidos = 0;
 
       for (const item of novosArquivos) {
-        // Otimização automática de imagens
         const arquivoParaUpload = await comprimirImagem(item.file);
-
         const storagePath = `${EMPREENDIMENTO_ID}/${dataSelecao}/${item.categoria}/${arquivoParaUpload.name}`;
         const fileRef = ref(storage, storagePath);
 
@@ -211,6 +213,9 @@ export default function UploadInterface() {
         const fileRef = ref(storage, fullPath);
         await deleteObject(fileRef);
         alert("Arquivo excluído com sucesso!");
+        
+        // Remove da seleção se estivesse marcado
+        setSelecionados((prev) => prev.filter((p) => p !== fullPath));
         await carregarArquivos();
       } catch (err) {
         console.error("Erro ao excluir:", err);
@@ -218,6 +223,72 @@ export default function UploadInterface() {
       }
     }
   };
+
+  // -----------------------------------------------------------
+  // NOVAS FUNÇÕES PARA AÇÃO EM LOTE (EXCLUIR / EDITAR)
+  // -----------------------------------------------------------
+  const handleDeletarEmMassa = async () => {
+    if (confirm(`Tem certeza que deseja excluir os ${selecionados.length} arquivo(s) selecionado(s)?`)) {
+      setLoadingList(true);
+      try {
+        for (const fullPath of selecionados) {
+          const fileRef = ref(storage, fullPath);
+          await deleteObject(fileRef);
+        }
+        alert("Arquivos excluídos com sucesso!");
+        setSelecionados([]);
+        await carregarArquivos();
+      } catch (err) {
+        console.error("Erro ao excluir arquivos em massa:", err);
+        alert("Erro ao excluir alguns arquivos. Tente novamente.");
+        setLoadingList(false);
+      }
+    }
+  };
+
+  const handleEditarEmMassa = async () => {
+    const novaCategoria = prompt(
+      "Digite a nova categoria para os arquivos selecionados:\nEx: pacote_zip, lamina_pdf, imagem_avulsa, video"
+    );
+
+    if (!novaCategoria || novaCategoria.trim() === "") return;
+
+    setLoadingList(true);
+    try {
+      for (const fullPath of selecionados) {
+        const fileRef = ref(storage, fullPath);
+        await updateMetadata(fileRef, {
+          customMetadata: {
+            categoria: novaCategoria.trim().toLowerCase(),
+          },
+        });
+      }
+      alert("Categorias atualizadas com sucesso!");
+      setSelecionados([]);
+      await carregarArquivos();
+    } catch (err) {
+      console.error("Erro ao editar arquivos em massa:", err);
+      alert("Erro ao atualizar os arquivos. Tente novamente.");
+      setLoadingList(false);
+    }
+  };
+
+  const toggleSelectAll = (checked: boolean, itensAtuais: ItemKit[]) => {
+    if (checked) {
+      setSelecionados(itensAtuais.map((i) => i.fullPath));
+    } else {
+      setSelecionados([]);
+    }
+  };
+
+  const toggleSelect = (fullPath: string) => {
+    setSelecionados((prev) =>
+      prev.includes(fullPath)
+        ? prev.filter((p) => p !== fullPath)
+        : [...prev, fullPath]
+    );
+  };
+  // -----------------------------------------------------------
 
   const datasDisponiveis = Array.from(new Set(itensCadastrados.map((i) => i.dataUpload)));
 
@@ -304,18 +375,44 @@ export default function UploadInterface() {
             <p className="text-sm text-gray-500">Gerencie ou exclua arquivos hospedados no Firebase Storage.</p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-gray-500">Filtrar Histórico:</span>
-            <select
-              value={filtroDataAdmin}
-              onChange={(e) => setFiltroDataAdmin(e.target.value)}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-bold text-gray-700 focus:outline-none"
-            >
-              <option value="todas">Todas as Datas</option>
-              {datasDisponiveis.map((d) => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
+          <div className="flex items-center gap-4 flex-wrap">
+            {/* NOVO MENU SUSPENSO (Aparece apenas se tiver item selecionado) */}
+            {selecionados.length > 0 && (
+              <div className="flex items-center gap-2 bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-200 shadow-sm animate-fade-in">
+                <span className="text-xs font-bold text-[#DD6810]">
+                  {selecionados.length} selecionado(s)
+                </span>
+                <select
+                  onChange={(e) => {
+                    if (e.target.value === "editar") handleEditarEmMassa();
+                    if (e.target.value === "excluir") handleDeletarEmMassa();
+                    e.target.value = ""; // Reseta o seletor visualmente após a ação
+                  }}
+                  className="px-2 py-1 text-xs border border-gray-300 rounded cursor-pointer bg-white text-gray-700 outline-none hover:border-[#DD6810]"
+                >
+                  <option value="">Escolher ação...</option>
+                  <option value="editar">Editar Categoria</option>
+                  <option value="excluir">Excluir Selecionados</option>
+                </select>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-gray-500">Filtrar Histórico:</span>
+              <select
+                value={filtroDataAdmin}
+                onChange={(e) => {
+                  setFiltroDataAdmin(e.target.value);
+                  setSelecionados([]); // Limpa a seleção ao trocar de filtro
+                }}
+                className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-bold text-gray-700 focus:outline-none"
+              >
+                <option value="todas">Todas as Datas</option>
+                {datasDisponiveis.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -326,6 +423,17 @@ export default function UploadInterface() {
             <table className="w-full text-left text-xs text-gray-600">
               <thead className="bg-gray-100 text-gray-700 uppercase text-[10px] tracking-wider">
                 <tr>
+                  <th className="p-3 w-10 text-center">
+                    <input
+                      type="checkbox"
+                      className="cursor-pointer accent-[#DD6810] w-4 h-4"
+                      checked={
+                        itensFiltradosAdmin.length > 0 &&
+                        selecionados.length === itensFiltradosAdmin.length
+                      }
+                      onChange={(e) => toggleSelectAll(e.target.checked, itensFiltradosAdmin)}
+                    />
+                  </th>
                   <th className="p-3">Nome do Arquivo</th>
                   <th className="p-3">Categoria</th>
                   <th className="p-3">Data</th>
@@ -336,13 +444,26 @@ export default function UploadInterface() {
               <tbody className="divide-y divide-gray-100">
                 {itensFiltradosAdmin.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-6 text-center text-gray-400">
+                    <td colSpan={6} className="p-6 text-center text-gray-400">
                       Nenhum arquivo publicado até o momento.
                     </td>
                   </tr>
                 ) : (
                   itensFiltradosAdmin.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
+                    <tr 
+                      key={item.id} 
+                      className={`hover:bg-gray-50 transition-colors ${
+                        selecionados.includes(item.fullPath) ? "bg-orange-50/50" : ""
+                      }`}
+                    >
+                      <td className="p-3 text-center">
+                        <input
+                          type="checkbox"
+                          className="cursor-pointer accent-[#DD6810] w-4 h-4"
+                          checked={selecionados.includes(item.fullPath)}
+                          onChange={() => toggleSelect(item.fullPath)}
+                        />
+                      </td>
                       <td className="p-3 font-semibold text-gray-800 truncate max-w-[200px]">
                         <a href={item.url} target="_blank" rel="noopener noreferrer" className="hover:underline text-[#1E293B]">
                           {item.nome}
