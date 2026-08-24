@@ -8,8 +8,6 @@ import {
   getDownloadURL,
   listAll,
   deleteObject,
-  getMetadata,
-  updateMetadata,
 } from "firebase/storage";
 
 interface ItemKit {
@@ -213,6 +211,7 @@ export default function UploadInterface() {
     }
   };
 
+  // LEITURA ULTRARRÁPIDA (Sem Metadados Lentos)
   const carregarArquivos = async () => {
     setLoadingList(true);
     try {
@@ -226,21 +225,41 @@ export default function UploadInterface() {
           filesList = [...filesList, ...subFiles];
         }
 
-        for (const itemRef of res.items) {
+        const itemPromises = res.items.map(async (itemRef) => {
           const url = await getDownloadURL(itemRef);
-          const meta = await getMetadata(itemRef);
-          const sizeMB = (meta.size / (1024 * 1024)).toFixed(2) + " MB";
+          
+          // Extrai os dados puramente do caminho: lumini-3/DATA/CATEGORIA/nome
+          const pathParts = itemRef.fullPath.split("/");
+          const dataUpload = pathParts.length >= 3 ? pathParts[1] : "Data Desconhecida";
+          const pastaCategoria = pathParts.length >= 4 ? pathParts[2] : "";
 
-          filesList.push({
+          const ext = itemRef.name.split(".").pop()?.toLowerCase() || "";
+          let categoriaFinal = pastaCategoria;
+
+          if (!categoriaFinal || categoriaFinal === "undefined") {
+            if (ext === "zip" || ext === "rar") categoriaFinal = "pacote_zip";
+            else if (ext === "pdf") {
+              if (itemRef.name.toLowerCase().includes("tabela")) categoriaFinal = "tabela_precos";
+              else categoriaFinal = "lamina_pdf";
+            }
+            else if (["mp4", "mov"].includes(ext)) categoriaFinal = "video";
+            else categoriaFinal = "imagem_avulsa";
+          }
+
+          return {
             id: itemRef.fullPath,
             nome: itemRef.name,
-            categoria: meta.customMetadata?.categoria || autoDetectarCategoria(new File([], itemRef.name)),
+            categoria: categoriaFinal,
             url: url,
-            tamanho: sizeMB,
-            dataUpload: meta.customMetadata?.dataUpload || meta.timeCreated.split("T")[0],
+            tamanho: "Ver no Servidor", // Placeholder para evitar gargalo de metadados
+            dataUpload: dataUpload,
             fullPath: itemRef.fullPath,
-          });
-        }
+          };
+        });
+
+        const itemsLidos = await Promise.all(itemPromises);
+        filesList = [...filesList, ...itemsLidos];
+        
         return filesList;
       };
 
@@ -272,18 +291,11 @@ export default function UploadInterface() {
         setStatusTexto(`Enviando (${i + 1}/${totalArquivos}): "${item.file.name}" (${tamanhoMB} MB)...`);
 
         const arquivoParaUpload = await comprimirImagem(item.file);
+        // O caminho força a estrutura rígida de dados que acelera a leitura!
         const storagePath = `${EMPREENDIMENTO_ID}/${dataSelecao}/${item.categoria}/${arquivoParaUpload.name}`;
         const fileRef = ref(storage, storagePath);
 
-        const metadata = {
-          customMetadata: {
-            categoria: item.categoria,
-            dataUpload: dataSelecao,
-            empreendimento: EMPREENDIMENTO_ID,
-          },
-        };
-
-        const uploadTask = uploadBytesResumable(fileRef, arquivoParaUpload, metadata);
+        const uploadTask = uploadBytesResumable(fileRef, arquivoParaUpload);
 
         await new Promise<void>((resolve, reject) => {
           uploadTask.on(
@@ -352,31 +364,10 @@ export default function UploadInterface() {
     }
   };
 
+  // OBS: Como abandonamos metadados de arquivo, a edição em lote agora exigiria mover o arquivo de pasta no firebase.
+  // Recomenda-se apagar e subir de novo com a categoria correta no menu seletor, caso tenha errado.
   const handleEditarEmMassa = async () => {
-    const novaCategoria = prompt(
-      "Digite a nova categoria para os arquivos selecionados:\nEx: tabela_precos, lamina_pdf, imagem_feed, imagem_story, imagem_avulsa, video, pacote_zip"
-    );
-
-    if (!novaCategoria || novaCategoria.trim() === "") return;
-
-    setLoadingList(true);
-    try {
-      for (const fullPath of selecionados) {
-        const fileRef = ref(storage, fullPath);
-        await updateMetadata(fileRef, {
-          customMetadata: {
-            categoria: novaCategoria.trim().toLowerCase(),
-          },
-        });
-      }
-      alert("Categorias atualizadas com sucesso!");
-      setSelecionados([]);
-      await carregarArquivos();
-    } catch (err) {
-      console.error("Erro ao editar arquivos em massa:", err);
-      alert("Erro ao atualizar os arquivos. Tente novamente.");
-      setLoadingList(false);
-    }
+    alert("Para trocar a categoria de arquivos publicados, exclua-os e suba novamente escolhendo a categoria correta na lista de envio rápido.");
   };
 
   const toggleSelectAll = (checked: boolean, itensAtuais: ItemKit[]) => {
@@ -441,11 +432,11 @@ export default function UploadInterface() {
           onDrop={handleDrop}
           className={`border-2 border-dashed rounded-xl p-6 sm:p-8 text-center transition-colors cursor-pointer ${
             isDragging
-              ? "border-[#DD6810] bg-[#DD6810]/5"
-              : "border-[#1E293B]/40 hover:border-[#DD6810] hover:bg-[#DD6810]/5"
+              ? "border-[#DD6810] bg-orange-50/50"
+              : "border-[#1E293B]/40 hover:border-[#1E293B] hover:bg-[#1E293B]/5"
           }`}
         >
-          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#DD6810]/10 text-[#DD6810] rounded-full flex items-center justify-center mx-auto mb-3">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#1E293B]/10 text-[#1E293B] rounded-full flex items-center justify-center mx-auto mb-3">
             <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
@@ -472,7 +463,6 @@ export default function UploadInterface() {
               </button>
             </div>
             
-            {/* Seletor Manual Adicionado */}
             <div className="space-y-2 max-h-56 overflow-y-auto mb-4">
               {novosArquivos.map((item, idx) => (
                 <div key={idx} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs bg-gray-50 p-2.5 sm:p-3 rounded-lg border border-gray-200">
@@ -521,7 +511,7 @@ export default function UploadInterface() {
               disabled={uploading}
               className="w-full bg-[#DD6810] hover:bg-[#c45a0d] text-white font-bold py-2.5 sm:py-3 text-xs sm:text-sm rounded-lg transition-colors cursor-pointer disabled:opacity-50"
             >
-              {uploading ? `Enviando... ${progresso}%` : "Confirmar e Publicar Todos"}
+              {uploading ? `Otimizando e Enviando... ${progresso}%` : "Confirmar e Publicar Todos"}
             </button>
           </div>
         )}
@@ -543,14 +533,12 @@ export default function UploadInterface() {
                 </span>
                 <select
                   onChange={(e) => {
-                    if (e.target.value === "editar") handleEditarEmMassa();
                     if (e.target.value === "excluir") handleDeletarEmMassa();
                     e.target.value = "";
                   }}
                   className="px-2 py-1 text-xs border border-gray-300 rounded cursor-pointer bg-white text-gray-700 outline-none hover:border-[#DD6810]"
                 >
                   <option value="">Escolher ação...</option>
-                  <option value="editar">Editar Categoria</option>
                   <option value="excluir">Excluir Selecionados</option>
                 </select>
               </div>
@@ -596,14 +584,13 @@ export default function UploadInterface() {
                   <th className="p-3">Nome do Arquivo</th>
                   <th className="p-3">Categoria</th>
                   <th className="p-3">Data</th>
-                  <th className="p-3">Tamanho</th>
                   <th className="p-3 text-right">Ação</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {itensFiltradosAdmin.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-6 text-center text-gray-400">
+                    <td colSpan={5} className="p-6 text-center text-gray-400">
                       Nenhum arquivo publicado até o momento.
                     </td>
                   </tr>
@@ -634,7 +621,6 @@ export default function UploadInterface() {
                         </span>
                       </td>
                       <td className="p-3 font-medium text-gray-500 whitespace-nowrap">{item.dataUpload}</td>
-                      <td className="p-3 text-gray-400 whitespace-nowrap">{item.tamanho}</td>
                       <td className="p-3 text-right">
                         <button
                           onClick={() => handleDeletar(item.fullPath)}
