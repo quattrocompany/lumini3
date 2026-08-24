@@ -9,7 +9,7 @@ import {
   listAll,
   deleteObject,
   getMetadata,
-  updateMetadata, // <-- Adicionado para permitir edição
+  updateMetadata,
 } from "firebase/storage";
 
 interface ItemKit {
@@ -22,10 +22,8 @@ interface ItemKit {
   fullPath: string;
 }
 
-// Identificador único deste empreendimento no Firebase
 const EMPREENDIMENTO_ID = "lumini-3";
 
-// Função para otimizar imagens no navegador antes do upload
 const comprimirImagem = (file: File, maxWidth = 1920, quality = 0.8): Promise<File> => {
   return new Promise((resolve) => {
     if (!file.type.startsWith("image/") || file.type.includes("gif") || file.type.includes("svg")) {
@@ -87,9 +85,38 @@ export default function UploadInterface() {
   const [progresso, setProgresso] = useState<number>(0);
   const [loadingList, setLoadingList] = useState(true);
   const [filtroDataAdmin, setFiltroDataAdmin] = useState<string>("todas");
-  
-  // Novo estado para rastrear os arquivos selecionados nos checkboxes
   const [selecionados, setSelecionados] = useState<string[]>([]);
+
+  const autoDetectarCategoria = (file: File | string): string => {
+    if (typeof file === "string") {
+      const ext = file.split(".").pop()?.toLowerCase() || "";
+      if (ext === "zip" || ext === "rar") return "pacote_zip";
+      if (ext === "pdf") return "lamina_pdf";
+      if (["mp4", "mov"].includes(ext)) return "video";
+      if (file.toLowerCase().includes("story")) return "imagem_story";
+      if (file.toLowerCase().includes("feed")) return "imagem_feed";
+      return "imagem_avulsa";
+    }
+
+    const name = file.name.toLowerCase();
+    const path = (file.webkitRelativePath || "").toLowerCase();
+    const ext = name.split(".").pop()?.toLowerCase() || "";
+
+    if (ext === "zip" || ext === "rar") return "pacote_zip";
+    if (ext === "pdf") return "lamina_pdf";
+
+    if (["mp4", "mov"].includes(ext) || path.includes("video") || path.includes("vídeo") || name.includes("video")) {
+      return "video";
+    }
+
+    if (["jpg", "jpeg", "png", "webp", "gif"].includes(ext)) {
+      if (path.includes("story") || name.includes("story")) return "imagem_story";
+      if (path.includes("feed") || name.includes("feed")) return "imagem_feed";
+      return "imagem_avulsa";
+    }
+
+    return "imagem_avulsa";
+  };
 
   const carregarArquivos = async () => {
     setLoadingList(true);
@@ -135,20 +162,11 @@ export default function UploadInterface() {
     carregarArquivos();
   }, []);
 
-  const autoDetectarCategoria = (filename: string) => {
-    const ext = filename.split(".").pop()?.toLowerCase();
-    if (ext === "zip" || ext === "rar") return "pacote_zip";
-    if (ext === "pdf") return "lamina_pdf";
-    if (["jpg", "jpeg", "png", "webp"].includes(ext || "")) return "imagem_avulsa";
-    if (["mp4", "mov"].includes(ext || "")) return "video";
-    return "imagem_avulsa";
-  };
-
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files).map((file) => ({
         file,
-        categoria: autoDetectarCategoria(file.name),
+        categoria: autoDetectarCategoria(file),
       }));
       setNovosArquivos((prev) => [...prev, ...filesArray]);
     }
@@ -213,8 +231,6 @@ export default function UploadInterface() {
         const fileRef = ref(storage, fullPath);
         await deleteObject(fileRef);
         alert("Arquivo excluído com sucesso!");
-        
-        // Remove da seleção se estivesse marcado
         setSelecionados((prev) => prev.filter((p) => p !== fullPath));
         await carregarArquivos();
       } catch (err) {
@@ -224,9 +240,6 @@ export default function UploadInterface() {
     }
   };
 
-  // -----------------------------------------------------------
-  // NOVAS FUNÇÕES PARA AÇÃO EM LOTE (EXCLUIR / EDITAR)
-  // -----------------------------------------------------------
   const handleDeletarEmMassa = async () => {
     if (confirm(`Tem certeza que deseja excluir os ${selecionados.length} arquivo(s) selecionado(s)?`)) {
       setLoadingList(true);
@@ -248,7 +261,7 @@ export default function UploadInterface() {
 
   const handleEditarEmMassa = async () => {
     const novaCategoria = prompt(
-      "Digite a nova categoria para os arquivos selecionados:\nEx: pacote_zip, lamina_pdf, imagem_avulsa, video"
+      "Digite a nova categoria para os arquivos selecionados:\nEx: pacote_zip, lamina_pdf, imagem_feed, imagem_story, imagem_avulsa, video"
     );
 
     if (!novaCategoria || novaCategoria.trim() === "") return;
@@ -288,7 +301,6 @@ export default function UploadInterface() {
         : [...prev, fullPath]
     );
   };
-  // -----------------------------------------------------------
 
   const datasDisponiveis = Array.from(new Set(itensCadastrados.map((i) => i.dataUpload)));
 
@@ -298,52 +310,52 @@ export default function UploadInterface() {
   });
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6 sm:space-y-10">
       
       {/* SEÇÃO 1: UPLOAD EM LOTE */}
-      <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-6 border-b border-gray-100">
+      <div className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-6 border-b border-gray-100">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">1. Novo Upload em Lote (Lumini 3)</h2>
-            <p className="text-sm text-gray-500">Selecione a data e envie os arquivos para o Firebase Storage.</p>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800">1. Novo Upload em Lote (Lumini 3)</h2>
+            <p className="text-xs sm:text-sm text-gray-500">Selecione a data e envie arquivos ou pastas organizadas.</p>
           </div>
-          <div className="flex items-center gap-3">
-            <label className="text-sm font-semibold text-gray-700">Data da Versão:</label>
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-start">
+            <label className="text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">Data da Versão:</label>
             <input
               type="date"
               value={dataSelecao}
               onChange={(e) => setDataSelecao(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-bold text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#1E293B]"
+              className="px-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg text-xs sm:text-sm font-bold text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#1E293B]"
             />
           </div>
         </div>
 
-        <div className="border-2 border-dashed border-[#1E293B]/40 hover:border-[#1E293B] rounded-xl p-8 text-center hover:bg-[#1E293B]/5 transition-colors relative cursor-pointer">
+        <div className="border-2 border-dashed border-[#1E293B]/40 hover:border-[#1E293B] rounded-xl p-6 sm:p-8 text-center hover:bg-[#1E293B]/5 transition-colors relative cursor-pointer">
           <input
             type="file"
             multiple
             onChange={handleFileSelect}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
           />
-          <div className="w-12 h-12 bg-[#1E293B]/10 text-[#1E293B] rounded-full flex items-center justify-center mx-auto mb-3">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#1E293B]/10 text-[#1E293B] rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
           </div>
-          <p className="text-gray-700 font-bold">Arraste os arquivos aqui ou clique para selecionar</p>
-          <p className="text-xs text-gray-400 mt-1">Imagens serão automaticamente convertidas para WebP leve.</p>
+          <p className="text-sm sm:text-base text-gray-700 font-bold">Arraste os arquivos/pastas aqui ou clique para selecionar</p>
+          <p className="text-[11px] sm:text-xs text-gray-400 mt-1">Divisão automática em Feed, Story e Vídeos. Imagens convertidas para WebP.</p>
         </div>
 
         {novosArquivos.length > 0 && (
           <div className="mt-6 border-t pt-4">
-            <h3 className="text-sm font-bold text-gray-700 mb-3">
+            <h3 className="text-xs sm:text-sm font-bold text-gray-700 mb-3">
               {novosArquivos.length} arquivo(s) pronto(s) para enviar:
             </h3>
             <div className="space-y-2 max-h-48 overflow-y-auto mb-4">
               {novosArquivos.map((item, idx) => (
-                <div key={idx} className="flex justify-between items-center text-xs bg-gray-50 p-3 rounded-lg border border-gray-200">
-                  <span className="font-semibold text-gray-700 truncate">{item.file.name}</span>
-                  <span className="bg-[#1E293B] text-white px-2 py-1 rounded text-[10px] font-bold uppercase">
+                <div key={idx} className="flex justify-between items-center text-xs bg-gray-50 p-2.5 sm:p-3 rounded-lg border border-gray-200">
+                  <span className="font-semibold text-gray-700 truncate max-w-[200px] sm:max-w-xs">{item.file.name}</span>
+                  <span className="bg-[#1E293B] text-white px-2 py-0.5 sm:py-1 rounded text-[9px] sm:text-[10px] font-bold uppercase whitespace-nowrap">
                     {item.categoria.replace("_", " ")}
                   </span>
                 </div>
@@ -359,7 +371,7 @@ export default function UploadInterface() {
             <button
               onClick={handleUpload}
               disabled={uploading}
-              className="w-full bg-[#DD6810] text-white font-bold py-3 rounded-lg hover:bg-[#c45a0d] transition-colors cursor-pointer disabled:opacity-50"
+              className="w-full bg-[#DD6810] text-white font-bold py-2.5 sm:py-3 text-xs sm:text-sm rounded-lg hover:bg-[#c45a0d] transition-colors cursor-pointer disabled:opacity-50"
             >
               {uploading ? `Otimizando e Enviando... ${progresso}%` : "Confirmar e Publicar Todos"}
             </button>
@@ -368,25 +380,24 @@ export default function UploadInterface() {
       </div>
 
       {/* SEÇÃO 2: MATERIAIS PUBLICADOS */}
-      <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      <div className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-4 border-b border-gray-100">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">2. Materiais Publicados</h2>
-            <p className="text-sm text-gray-500">Gerencie ou exclua arquivos hospedados no Firebase Storage.</p>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800">2. Materiais Publicados</h2>
+            <p className="text-xs sm:text-sm text-gray-500">Gerencie ou exclua arquivos hospedados no Firebase Storage.</p>
           </div>
 
-          <div className="flex items-center gap-4 flex-wrap">
-            {/* NOVO MENU SUSPENSO (Aparece apenas se tiver item selecionado) */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
             {selecionados.length > 0 && (
-              <div className="flex items-center gap-2 bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-200 shadow-sm animate-fade-in">
-                <span className="text-xs font-bold text-[#DD6810]">
+              <div className="flex items-center justify-between sm:justify-start gap-2 bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-200 shadow-sm">
+                <span className="text-xs font-bold text-[#DD6810] whitespace-nowrap">
                   {selecionados.length} selecionado(s)
                 </span>
                 <select
                   onChange={(e) => {
                     if (e.target.value === "editar") handleEditarEmMassa();
                     if (e.target.value === "excluir") handleDeletarEmMassa();
-                    e.target.value = ""; // Reseta o seletor visualmente após a ação
+                    e.target.value = "";
                   }}
                   className="px-2 py-1 text-xs border border-gray-300 rounded cursor-pointer bg-white text-gray-700 outline-none hover:border-[#DD6810]"
                 >
@@ -397,15 +408,15 @@ export default function UploadInterface() {
               </div>
             )}
 
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-gray-500">Filtrar Histórico:</span>
+            <div className="flex items-center justify-between sm:justify-start gap-2">
+              <span className="text-xs font-semibold text-gray-500 whitespace-nowrap">Filtrar Histórico:</span>
               <select
                 value={filtroDataAdmin}
                 onChange={(e) => {
                   setFiltroDataAdmin(e.target.value);
-                  setSelecionados([]); // Limpa a seleção ao trocar de filtro
+                  setSelecionados([]);
                 }}
-                className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-bold text-gray-700 focus:outline-none"
+                className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-bold text-gray-700 focus:outline-none bg-white cursor-pointer"
               >
                 <option value="todas">Todas as Datas</option>
                 {datasDisponiveis.map((d) => (
@@ -417,10 +428,10 @@ export default function UploadInterface() {
         </div>
 
         {loadingList ? (
-          <p className="text-sm text-gray-500 text-center py-6">Carregando arquivos do Lumini 3...</p>
+          <p className="text-xs sm:text-sm text-gray-500 text-center py-6">Carregando arquivos do Lumini 3...</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-gray-600">
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <table className="w-full text-left text-xs text-gray-600 min-w-[600px]">
               <thead className="bg-gray-100 text-gray-700 uppercase text-[10px] tracking-wider">
                 <tr>
                   <th className="p-3 w-10 text-center">
@@ -464,22 +475,22 @@ export default function UploadInterface() {
                           onChange={() => toggleSelect(item.fullPath)}
                         />
                       </td>
-                      <td className="p-3 font-semibold text-gray-800 truncate max-w-[200px]">
+                      <td className="p-3 font-semibold text-gray-800 truncate max-w-[180px] sm:max-w-[220px]">
                         <a href={item.url} target="_blank" rel="noopener noreferrer" className="hover:underline text-[#1E293B]">
                           {item.nome}
                         </a>
                       </td>
                       <td className="p-3">
-                        <span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
+                        <span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase whitespace-nowrap">
                           {item.categoria.replace("_", " ")}
                         </span>
                       </td>
-                      <td className="p-3 font-medium text-gray-500">{item.dataUpload}</td>
-                      <td className="p-3 text-gray-400">{item.tamanho}</td>
+                      <td className="p-3 font-medium text-gray-500 whitespace-nowrap">{item.dataUpload}</td>
+                      <td className="p-3 text-gray-400 whitespace-nowrap">{item.tamanho}</td>
                       <td className="p-3 text-right">
                         <button
                           onClick={() => handleDeletar(item.fullPath)}
-                          className="text-red-500 hover:text-red-700 font-bold hover:underline cursor-pointer"
+                          className="text-red-500 hover:text-red-700 font-bold hover:underline cursor-pointer whitespace-nowrap"
                         >
                           Excluir
                         </button>
