@@ -56,10 +56,15 @@ export default function KitCorretorPage() {
     return i.dataUpload === dataFiltro;
   });
 
-  const pacotesZip = itensFiltrados.filter((i) => i.categoria === "pacote_zip");
-  const laminasPdf = itensFiltrados.filter((i) => i.categoria === "lamina_pdf");
-  const videos = itensFiltrados.filter((i) => i.categoria === "video");
+  // Filtros dinâmicos dos PDFs enviados pelo Admin
+  const tabelasPdf = itensFiltrados.filter(
+    (i) => i.categoria === "tabela_precos" || i.nome.toLowerCase().includes("tabela")
+  );
   
+  const laminasPdf = itensFiltrados.filter(
+    (i) => i.categoria === "lamina_pdf" || i.nome.toLowerCase().includes("book") || i.nome.toLowerCase().includes("lamina")
+  );
+
   // Mídia geral da galeria (imagens + vídeos)
   const midiasGaleria = itensFiltrados.filter((i) => 
     ["imagem_avulsa", "imagem_feed", "imagem_story", "video"].includes(i.categoria)
@@ -69,13 +74,6 @@ export default function KitCorretorPage() {
     if (tipoImagem === "todas") return true;
     return i.categoria === tipoImagem;
   });
-
-  const rolarParaVideos = () => {
-    const elemento = document.getElementById("secao-videos");
-    if (elemento) {
-      elemento.scrollIntoView({ behavior: "smooth" });
-    }
-  };
 
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col justify-between">
@@ -96,196 +94,97 @@ export default function KitCorretorPage() {
           </div>
         </div>
 
-        {/* CONTEÚDO PRINCIPAL */}
-        <div className="max-w-[1200px] mx-auto px-6 py-12">
+        {/* CONTEÚDO PRINCIPAL (1440px) */}
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-8 py-10">
           
-          <div className="mb-12 text-center">
-            <h1 className="text-3xl md:text-5xl font-black text-[#1E293B] uppercase tracking-tight mb-4">
+          <div className="mb-10 text-center">
+            <h1 className="text-3xl md:text-5xl font-black text-[#1E293B] uppercase tracking-tight mb-3">
               Kit Corretor
             </h1>
-            <p className="text-gray-600 text-base max-w-2xl mx-auto">
+            <p className="text-gray-600 text-sm sm:text-base max-w-2xl mx-auto">
               Reunimos todo o conteúdo de apoio em um só lugar para você ter sempre à mão. Use sem moderação!
             </p>
           </div>
 
-          {/* BOTÃO DE DOWNLOAD TOTAL */}
-          {pacotesZip.length > 0 && (
-            <div className="mb-10 text-center bg-white p-8 rounded-2xl shadow-sm border border-gray-200 max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
-              <div className="text-center sm:text-left">
-                <span className="bg-[#1E293B]/10 text-[#1E293B] text-xs font-bold uppercase px-3 py-1 rounded-full">
-                  Download Completo
-                </span>
-                <h2 className="text-xl md:text-2xl font-black text-gray-800 mt-2">
-                  Baixar Todo o Kit de Vendas
-                </h2>
-                <p className="text-xs text-gray-500">Inclui todas as imagens HD, lâmina comercial e vídeos em 1 só arquivo.</p>
-              </div>
-              
-              <a
-                href={pacotesZip[0].url}
-                download
-                className="w-full sm:w-auto bg-[#9222d7] hover:bg-[#c40db5] text-white font-black py-4 px-8 rounded-full shadow-lg hover:scale-105 transition-all text-sm uppercase tracking-wider flex items-center justify-center gap-3 cursor-pointer whitespace-nowrap"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Baixar Kit Completo (.ZIP)
-              </a>
-            </div>
-          )}
-
-          {/* BOXES DE DOWNLOADS SEPARADOS (GRID DE 4 CARDS) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* 2 RETÂNGULOS COMPACTOS DEDICADOS (1440PX) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-16">
             
-            {/* Box 1: TABELA DE PREÇOS */}
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-shadow flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-[#DD6810]/10 text-[#DD6810] rounded-full flex items-center justify-center mb-6">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
+            {/* Retângulo 1: TABELA DE PREÇOS */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition-all flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4 text-center sm:text-left w-full sm:w-auto">
+                <div className="w-12 h-12 shrink-0 bg-[#DD6810]/10 text-[#DD6810] rounded-xl flex items-center justify-center mx-auto sm:mx-0">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800">Tabela de Preços</h3>
+                  <p className="text-xs text-gray-500">Tabela oficial com fluxos de pagamento e valores das unidades.</p>
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">Tabela de Preços</h3>
-              <p className="text-sm text-gray-500 mb-6 flex-1">Tabela de vendas oficial com fluxos de pagamento e valores das unidades.</p>
-              <a
-                href="/pdf/TABELA_LUMINI3_190826.pdf"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full bg-[#DD6810] text-white font-bold py-3 rounded-full hover:bg-[#c0590a] transition-colors text-sm text-center"
-              >
-                Visualizar e Baixar
-              </a>
-            </div>
 
-            {/* Box 2: IMAGENS ZIP */}
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-shadow flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-[#1E293B]/10 text-[#1E293B] rounded-full flex items-center justify-center mb-6">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">Imagens e Perspectivas</h3>
-              <p className="text-sm text-gray-500 mb-6 flex-1">Renders em alta resolução da fachada, lazer e decorado.</p>
-              {pacotesZip.length > 0 ? (
-                <a href={pacotesZip[0].url} download className="w-full bg-[#8810dd] text-white font-bold py-3 rounded-full hover:bg-[#590dc4] transition-colors text-sm text-center">
-                  Baixar Pacote (.ZIP)
+              {tabelasPdf.length > 0 ? (
+                <a
+                  href={tabelasPdf[0].url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:w-auto bg-[#DD6810] hover:bg-[#c0590a] text-white font-bold py-3 px-6 rounded-full transition-colors text-xs text-center whitespace-nowrap shadow-sm cursor-pointer"
+                >
+                  Visualizar e Baixar (.PDF)
                 </a>
               ) : (
-                <button disabled className="w-full bg-gray-200 text-gray-400 font-bold py-3 rounded-full text-sm cursor-not-allowed">
+                <button disabled className="w-full sm:w-auto bg-gray-200 text-gray-400 font-bold py-3 px-6 rounded-full text-xs cursor-not-allowed whitespace-nowrap">
                   Indisponível
                 </button>
               )}
             </div>
 
-            {/* Box 3: LÂMINA E PLANTAS PDF */}
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-shadow flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-[#1E293B]/10 text-[#1E293B] rounded-full flex items-center justify-center mb-6">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
+            {/* Retângulo 2: BOOK DO CORRETOR */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition-all flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4 text-center sm:text-left w-full sm:w-auto">
+                <div className="w-12 h-12 shrink-0 bg-[#8810dd]/10 text-[#8810dd] rounded-xl flex items-center justify-center mx-auto sm:mx-0">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800">Book do Corretor</h3>
+                  <p className="text-xs text-gray-500">Apresentação comercial e cadernos de plantas cotadas.</p>
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">Lâmina e Plantas</h3>
-              <p className="text-sm text-gray-500 mb-6 flex-1">Apresentação comercial e todas as plantas baixas cotadas.</p>
+
               {laminasPdf.length > 0 ? (
                 <a 
                   href={laminasPdf[0].url} 
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full bg-[#8810dd] text-white font-bold py-3 rounded-full hover:bg-[#590dc4] transition-colors text-sm text-center"
+                  className="w-full sm:w-auto bg-[#8810dd] hover:bg-[#590dc4] text-white font-bold py-3 px-6 rounded-full transition-colors text-xs text-center whitespace-nowrap shadow-sm cursor-pointer"
                 >
-                  Visualizar e Baixar
+                  Visualizar e Baixar (.PDF)
                 </a>
               ) : (
-                <button disabled className="w-full bg-gray-200 text-gray-400 font-bold py-3 rounded-full text-sm cursor-not-allowed">
+                <button disabled className="w-full sm:w-auto bg-gray-200 text-gray-400 font-bold py-3 px-6 rounded-full text-xs cursor-not-allowed whitespace-nowrap">
                   Indisponível
                 </button>
               )}
             </div>
 
-            {/* Box 4: VÍDEOS (DIRECIONA PARA A SEÇÃO DE VÍDEOS) */}
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-shadow flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-[#1E293B]/10 text-[#1E293B] rounded-full flex items-center justify-center mb-6">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">Vídeos e Reels</h3>
-              <p className="text-sm text-gray-500 mb-6 flex-1">Vídeos promocionais prontos para postar no Instagram e WhatsApp.</p>
-              <button
-                onClick={rolarParaVideos}
-                className="w-full bg-[#1E293B] text-white font-bold py-3 rounded-full hover:bg-[#0f172a] transition-colors text-sm text-center cursor-pointer"
-              >
-                Ver Vídeos (.MP4)
-              </button>
-            </div>
-
           </div>
 
-          {/* SEÇÃO DEDICADA DE VÍDEOS */}
-          <div id="secao-videos" className="mt-20 border-t border-gray-200 pt-16 scroll-mt-6">
-            <div className="text-center sm:text-left mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold text-[#1E293B] uppercase tracking-wide">
-                Vídeos e Reels
-              </h2>
-              <p className="text-gray-500 text-sm mt-1">Assista ou baixe os vídeos promocionais para postar nas suas redes sociais.</p>
-            </div>
-
-            {loading ? (
-              <p className="text-center py-8 text-gray-400 font-medium">Carregando vídeos...</p>
-            ) : videos.length === 0 ? (
-              <div className="text-center py-12 bg-white border border-gray-200 rounded-2xl shadow-sm">
-                <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                <p className="text-gray-500 font-medium">Nenhum vídeo publicado no momento.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {videos.map((vid) => (
-                  <div key={vid.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col justify-between">
-                    <div className="relative aspect-[9/16] bg-black">
-                      <video
-                        src={vid.url}
-                        controls
-                        preload="metadata"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="p-4 flex flex-col gap-3">
-                      <span className="text-xs font-bold text-gray-800 truncate" title={vid.nome}>
-                        {vid.nome}
-                      </span>
-                      <a
-                        href={vid.url}
-                        download
-                        className="w-full bg-[#1E293B] hover:bg-[#0c82a0] text-white text-xs font-bold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                        Baixar Vídeo ({vid.tamanho})
-                      </a>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* GALERIA DE IMAGENS AVULSAS COM ABAS */}
-          <div className="mt-20 border-t border-gray-200 pt-16">
+          {/* GALERIA UNIFICADA DE MÍDIAS (IMAGENS & VÍDEOS) */}
+          <div id="secao-galeria" className="border-t border-gray-200 pt-12">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-10">
               <div className="text-center sm:text-left">
                 <h2 className="text-2xl md:text-3xl font-bold text-[#1E293B] uppercase tracking-wide">
-                  Imagens Avulsas
+                  Galeria de Mídias
                 </h2>
-                <p className="text-gray-500 text-sm mt-1">Baixe perspectivas individuais diretamente para o seu dispositivo.</p>
+                <p className="text-gray-500 text-sm mt-1">Baixe perspectivas e vídeos individuais diretamente para o seu dispositivo.</p>
               </div>
 
               {datasDisponiveis.length > 0 && (
                 <div className="flex flex-col sm:flex-row items-end sm:items-center gap-4">
                   
-                  {/* ABAS DE CATEGORIA (INCLUI VÍDEOS) */}
+                  {/* ABAS DE CATEGORIA */}
                   <div className="flex items-center bg-gray-100 p-1 rounded-lg">
                     <button 
                       onClick={() => setTipoImagem("todas")}
@@ -344,7 +243,7 @@ export default function KitCorretorPage() {
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
                 {midiasRenderizadas.map((item) => (
-                  <div key={item.id} className="group relative aspect-[9/16] rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-gray-200 bg-gray-100">
+                  <div key={item.id} className="group relative aspect-[9/16] rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-gray-200 bg-black">
                     {item.categoria === "video" ? (
                       <video src={item.url} controls className="w-full h-full object-cover" />
                     ) : (
@@ -358,14 +257,14 @@ export default function KitCorretorPage() {
                       />
                     )}
                     
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-4 pointer-events-none group-hover:pointer-events-auto">
                       <span className="text-white font-bold mb-4 text-center text-xs md:text-sm px-2 truncate w-full">
                         {item.nome}
                       </span>
                       <a
                         href={item.url}
                         download
-                        className="bg-[#DD6810] text-white p-3 rounded-full hover:bg-white hover:text-[#8810dd] transition-colors transform hover:scale-110 shadow-lg"
+                        className="bg-[#DD6810] text-white p-3 rounded-full hover:bg-white hover:text-[#8810dd] transition-colors transform hover:scale-110 shadow-lg cursor-pointer"
                         title={`Baixar ${item.nome}`}
                       >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

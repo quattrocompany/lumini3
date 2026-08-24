@@ -24,7 +24,6 @@ interface ItemKit {
 
 const EMPREENDIMENTO_ID = "lumini-3";
 
-// Compressão segura de imagem no navegador
 const comprimirImagem = (file: File, maxWidth = 1920, quality = 0.8): Promise<File> => {
   return new Promise((resolve) => {
     if (!file || file.size === 0 || !file.type.startsWith("image/") || file.type.includes("gif") || file.type.includes("svg")) {
@@ -100,14 +99,18 @@ export default function UploadInterface() {
   const [selecionados, setSelecionados] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Detecção inteligente de categoria considerando o caminho relativo da pasta e o nome do arquivo
   const autoDetectarCategoria = (file: File, relativePath = ""): string => {
     const name = file.name.toLowerCase();
     const path = (relativePath || file.webkitRelativePath || "").toLowerCase();
     const ext = name.split(".").pop() || "";
 
     if (ext === "zip" || ext === "rar") return "pacote_zip";
-    if (ext === "pdf") return "lamina_pdf";
+    
+    // Identificação de PDFs (Tabela vs Book/Lâmina)
+    if (ext === "pdf") {
+      if (name.includes("tabela") || path.includes("tabela")) return "tabela_precos";
+      return "lamina_pdf";
+    }
 
     if (["mp4", "mov", "avi"].includes(ext) || path.includes("video") || path.includes("vídeo") || name.includes("video")) {
       return "video";
@@ -122,7 +125,6 @@ export default function UploadInterface() {
     return "imagem_avulsa";
   };
 
-  // Leitor recursivo de arquivos dentro de pastas arrastadas
   const escanearEntrada = async (entry: any, path = ""): Promise<{ file: File; relativePath: string }[]> => {
     if (entry.isFile) {
       return new Promise((resolve) => {
@@ -165,7 +167,6 @@ export default function UploadInterface() {
     return [];
   };
 
-  // Evento de Drop na caixa
   const handleDrop = async (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
@@ -343,7 +344,7 @@ export default function UploadInterface() {
 
   const handleEditarEmMassa = async () => {
     const novaCategoria = prompt(
-      "Digite a nova categoria para os arquivos selecionados:\nEx: pacote_zip, lamina_pdf, imagem_feed, imagem_story, imagem_avulsa, video"
+      "Digite a nova categoria para os arquivos selecionados:\nEx: tabela_precos, lamina_pdf, imagem_feed, imagem_story, imagem_avulsa, video, pacote_zip"
     );
 
     if (!novaCategoria || novaCategoria.trim() === "") return;
@@ -394,7 +395,6 @@ export default function UploadInterface() {
   return (
     <div className="space-y-6 sm:space-y-10">
       
-      {/* Input de Arquivo Oculto */}
       <input
         ref={fileInputRef}
         type="file"
@@ -421,7 +421,6 @@ export default function UploadInterface() {
           </div>
         </div>
 
-        {/* Caixas de Arraste e Solte Responsiva */}
         <div
           onClick={() => fileInputRef.current?.click()}
           onDragOver={(e) => {
@@ -445,7 +444,7 @@ export default function UploadInterface() {
             Arraste as pastas (feed, story, vídeos) ou arquivos aqui
           </p>
           <p className="text-[11px] sm:text-xs text-gray-400 mt-1">
-            Classificação automática em Feed, Story e Vídeos. Imagens convertidas para WebP.
+            Classificação automática (Tabelas, Book, Feed, Story e Vídeos). Imagens convertidas para WebP.
           </p>
         </div>
 
