@@ -12,32 +12,37 @@ interface ItemKit {
   dataUpload: string;
 }
 
-// Array fallback esvaziado para impedir a exibição de cards quebrados
-const imagensPadraoFallback: ItemKit[] = [];
-
 export default function KitCorretorPage() {
   const [itens, setItens] = useState<ItemKit[]>([]);
   const [dataFiltro, setDataFiltro] = useState<string>("todas");
+  const [tipoImagem, setTipoImagem] = useState<string>("todas"); // Estado para as Abas
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function carregarKit() {
       try {
-        const res = await fetch("/api/kit");
+        // Cache busting rigoroso para não trazer dados estáticos antigos
+        const res = await fetch(`/api/kit?t=${new Date().getTime()}`, {
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache",
+          },
+        });
+        
         const data = await res.json();
         
-        if (data.items && data.items.length > 0) {
+        if (data.items && Array.isArray(data.items)) {
           setItens(data.items);
           const datas = Array.from(new Set(data.items.map((i: ItemKit) => i.dataUpload))).sort().reverse();
           if (datas.length > 0) {
             setDataFiltro(datas[0] as string);
           }
         } else {
-          setItens(imagensPadraoFallback);
+          setItens([]);
         }
       } catch (e) {
         console.error("Erro ao carregar do servidor:", e);
-        setItens(imagensPadraoFallback);
+        setItens([]);
       } finally {
         setLoading(false);
       }
@@ -55,7 +60,17 @@ export default function KitCorretorPage() {
   const pacotesZip = itensFiltrados.filter((i) => i.categoria === "pacote_zip");
   const laminasPdf = itensFiltrados.filter((i) => i.categoria === "lamina_pdf");
   const videos = itensFiltrados.filter((i) => i.categoria === "video");
-  const imagensAvulsas = itensFiltrados.filter((i) => i.categoria === "imagem_avulsa");
+  
+  // Pegamos todas as imagens do banco de dados primeiro
+  const imagensBancoDeDados = itensFiltrados.filter((i) => 
+    ["imagem_avulsa", "imagem_feed", "imagem_story"].includes(i.categoria)
+  );
+
+  // Filtramos as imagens de acordo com a aba selecionada pelo corretor
+  const imagensAvulsasRenderizadas = imagensBancoDeDados.filter((i) => {
+    if (tipoImagem === "todas") return true;
+    return i.categoria === tipoImagem;
+  });
 
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col justify-between">
@@ -200,40 +215,72 @@ export default function KitCorretorPage() {
 
           </div>
 
-          {/* GALERIA DE IMAGENS AVULSAS (PROPORÇÃO 9:16) */}
+          {/* GALERIA DE IMAGENS AVULSAS COM ABAS */}
           <div className="mt-20 border-t border-gray-200 pt-16">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-10">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-10">
               <div className="text-center sm:text-left">
                 <h2 className="text-2xl md:text-3xl font-bold text-[#1E293B] uppercase tracking-wide">
                   Imagens Avulsas
                 </h2>
-                <p className="text-gray-500 text-sm">Baixe perspectivas individuais diretamente para o seu dispositivo.</p>
+                <p className="text-gray-500 text-sm mt-1">Baixe perspectivas individuais diretamente para o seu dispositivo.</p>
               </div>
 
               {datasDisponiveis.length > 0 && (
-                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm">
-                  <span className="text-xs font-bold text-gray-600">Histórico de Atualizações:</span>
-                  <select
-                    value={dataFiltro}
-                    onChange={(e) => setDataFiltro(e.target.value)}
-                    className="text-xs font-bold text-[#1E293B] bg-transparent focus:outline-none cursor-pointer"
-                  >
-                    <option value="todas">Exibir Todas as Datas</option>
-                    {datasDisponiveis.map((d) => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
+                <div className="flex flex-col sm:flex-row items-end sm:items-center gap-4">
+                  
+                  {/* ABAS DE CATEGORIA */}
+                  <div className="flex items-center bg-gray-100 p-1 rounded-lg">
+                    <button 
+                      onClick={() => setTipoImagem("todas")}
+                      className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${tipoImagem === "todas" ? "bg-white shadow-sm text-[#DD6810]" : "text-gray-500 hover:text-gray-700"}`}
+                    >
+                      Todas
+                    </button>
+                    <button 
+                      onClick={() => setTipoImagem("imagem_feed")}
+                      className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${tipoImagem === "imagem_feed" ? "bg-white shadow-sm text-[#DD6810]" : "text-gray-500 hover:text-gray-700"}`}
+                    >
+                      Feed
+                    </button>
+                    <button 
+                      onClick={() => setTipoImagem("imagem_story")}
+                      className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${tipoImagem === "imagem_story" ? "bg-white shadow-sm text-[#DD6810]" : "text-gray-500 hover:text-gray-700"}`}
+                    >
+                      Story
+                    </button>
+                  </div>
+
+                  {/* SELETOR DE DATA */}
+                  <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm">
+                    <span className="text-xs font-bold text-gray-600 hidden sm:inline-block">Versão:</span>
+                    <select
+                      value={dataFiltro}
+                      onChange={(e) => setDataFiltro(e.target.value)}
+                      className="text-xs font-bold text-[#1E293B] bg-transparent focus:outline-none cursor-pointer"
+                    >
+                      <option value="todas">Todas as Datas</option>
+                      {datasDisponiveis.map((d) => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               )}
             </div>
 
             {loading ? (
-              <p className="text-center py-10 text-gray-400 font-medium">Carregando imagens...</p>
-            ) : imagensAvulsas.length === 0 ? (
-              <p className="text-center py-10 text-gray-400 font-medium">Nenhum arquivo publicado até o momento.</p>
+              <p className="text-center py-10 text-gray-400 font-medium">Procurando imagens do servidor...</p>
+            ) : imagensAvulsasRenderizadas.length === 0 ? (
+              <div className="text-center py-16 bg-white border border-gray-200 rounded-2xl shadow-sm">
+                <svg className="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p className="text-gray-500 font-medium">Nenhuma imagem avulsa encontrada para esta versão/filtro.</p>
+                <p className="text-gray-400 text-sm mt-1">Quando houver imagens, elas aparecerão aqui automaticamente.</p>
+              </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-                {imagensAvulsas.map((img) => (
+                {imagensAvulsasRenderizadas.map((img) => (
                   <div key={img.id} className="group relative aspect-[9/16] rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-gray-200 bg-gray-100">
                     <Image
                       src={img.url}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, DragEvent } from "react";
 import { storage } from "@/lib/firebase";
 import {
   ref,
@@ -24,11 +24,14 @@ interface ItemKit {
 
 const EMPREENDIMENTO_ID = "lumini-3";
 
+// Compressão segura de imagem (com timeout de proteção para nunca travar o upload)
 const comprimirImagem = (file: File, maxWidth = 1920, quality = 0.8): Promise<File> => {
   return new Promise((resolve) => {
-    if (!file.type.startsWith("image/") || file.type.includes("gif") || file.type.includes("svg")) {
+    if (!file || file.size === 0 || !file.type.startsWith("image/") || file.type.includes("gif") || file.type.includes("svg")) {
       return resolve(file);
     }
+
+    const timer = setTimeout(() => resolve(file), 4000); // Se travar por mais de 4s, envia original
 
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -36,6 +39,7 @@ const comprimirImagem = (file: File, maxWidth = 1920, quality = 0.8): Promise<Fi
       const img = document.createElement("img");
       img.src = event.target?.result as string;
       img.onload = () => {
+        clearTimeout(timer);
         const canvas = document.createElement("canvas");
         let width = img.width;
         let height = img.height;
@@ -54,8 +58,8 @@ const comprimirImagem = (file: File, maxWidth = 1920, quality = 0.8): Promise<Fi
         canvas.toBlob(
           (blob) => {
             if (blob) {
-              const nomeSemExtensao = file.name.substring(0, file.name.lastIndexOf(".")) || file.name;
-              const novoArquivo = new File([blob], `${nomeSemExtensao}.webp`, {
+              const nomeSemExt = file.name.substring(0, file.name.lastIndexOf(".")) || file.name;
+              const novoArquivo = new File([blob], `${nomeSemExt}.webp`, {
                 type: "image/webp",
                 lastModified: Date.now(),
               });
@@ -68,9 +72,15 @@ const comprimirImagem = (file: File, maxWidth = 1920, quality = 0.8): Promise<Fi
           quality
         );
       };
-      img.onerror = () => resolve(file);
+      img.onerror = () => {
+        clearTimeout(timer);
+        resolve(file);
+      };
     };
-    reader.onerror = () => resolve(file);
+    reader.onerror = () => {
+      clearTimeout(timer);
+      resolve(file);
+    };
   });
 };
 
@@ -87,25 +97,16 @@ export default function UploadInterface() {
   const [filtroDataAdmin, setFiltroDataAdmin] = useState<string>("todas");
   const [selecionados, setSelecionados] = useState<string[]>([]);
 
-  const autoDetectarCategoria = (file: File | string): string => {
-    if (typeof file === "string") {
-      const ext = file.split(".").pop()?.toLowerCase() || "";
-      if (ext === "zip" || ext === "rar") return "pacote_zip";
-      if (ext === "pdf") return "lamina_pdf";
-      if (["mp4", "mov"].includes(ext)) return "video";
-      if (file.toLowerCase().includes("story")) return "imagem_story";
-      if (file.toLowerCase().includes("feed")) return "imagem_feed";
-      return "imagem_avulsa";
-    }
-
+  // Detecção inteligente de categoria por caminho da pasta ou nome
+  const autoDetectarCategoria = (file: File, relativePath = ""): string => {
     const name = file.name.toLowerCase();
-    const path = (file.webkitRelativePath || "").toLowerCase();
-    const ext = name.split(".").pop()?.toLowerCase() || "";
+    const path = (relativePath || file.webkitRelativePath || "").toLowerCase();
+    const ext = name.split(".").pop() || "";
 
     if (ext === "zip" || ext === "rar") return "pacote_zip";
     if (ext === "pdf") return "lamina_pdf";
 
-    if (["mp4", "mov"].includes(ext) || path.includes("video") || path.includes("vídeo") || name.includes("video")) {
+    if (["mp4", "mov", "avi"].includes(ext) || path.includes("video") || path.includes("vídeo") || name.includes("video")) {
       return "video";
     }
 
@@ -116,6 +117,68 @@ export default function UploadInterface() {
     }
 
     return "imagem_avulsa";
+  };
+
+  // Leitor recursivo de pastas arrastadas (Drag & Drop)
+  const lerPastaRecursiva = async (entry: any, path = ""): Promise<{ file: File; path: string }[]> => {
+    if (entry.isFile) {
+      return new Promise((resolve) => {
+        entry.file((f: File) => resolve([{ file: f, path: path + f.name }]));
+      });
+    } else if (entry.isDirectory) {
+      const reader = entry.createReader();
+      const entries: any[] = await new Promise((resolve) => reader.readEntries((e: any[]) => resolve(e)));
+      let result: { file: File; path: string }[] = [];
+      for (const child of entries) {
+        const subFiles = await lerPastaRecursiva(child, `${path}${entry.name}/`);
+        result = [...result, ...subFiles];
+      }
+      return result;
+    }
+    return [];
+  };
+
+  // Manipulador de Soltura de Pastas/Arquivos
+  const handleDrop = async (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const items = e.dataTransfer.items;
+    let arquivosExtraidos: { file: File; categoria: string }[] = [];
+
+    if (items) {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.kind === "file") {
+          const entry = item.webkitGetAsEntry();
+          if (entry) {
+            const filesWithPath = await lerPastaRecursiva(entry);
+            for (const f of filesWithPath) {
+              if (f.file.size > 0) { // Ignora marcadores de pasta vazia
+                arquivosExtraidos.push({
+                  file: f.file,
+                  categoria: autoDetectarCategoria(f.file, f.path),
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (arquivosExtraidos.length > 0) {
+      setNovosArquivos((prev) => [...prev, ...arquivosExtraidos]);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files)
+        .filter((file) => file.size > 0)
+        .map((file) => ({
+          file,
+          categoria: autoDetectarCategoria(file),
+        }));
+      setNovosArquivos((prev) => [...prev, ...filesArray]);
+    }
   };
 
   const carregarArquivos = async () => {
@@ -139,7 +202,7 @@ export default function UploadInterface() {
           filesList.push({
             id: itemRef.fullPath,
             nome: itemRef.name,
-            categoria: meta.customMetadata?.categoria || autoDetectarCategoria(itemRef.name),
+            categoria: meta.customMetadata?.categoria || autoDetectarCategoria(new File([], itemRef.name)),
             url: url,
             tamanho: sizeMB,
             dataUpload: meta.customMetadata?.dataUpload || meta.timeCreated.split("T")[0],
@@ -161,16 +224,6 @@ export default function UploadInterface() {
   useEffect(() => {
     carregarArquivos();
   }, []);
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const filesArray = Array.from(e.target.files).map((file) => ({
-        file,
-        categoria: autoDetectarCategoria(file),
-      }));
-      setNovosArquivos((prev) => [...prev, ...filesArray]);
-    }
-  };
 
   const handleUpload = async () => {
     if (novosArquivos.length === 0) return;
@@ -213,7 +266,7 @@ export default function UploadInterface() {
         });
       }
 
-      alert("Arquivos do Lumini 3 otimizados e publicados com sucesso!");
+      alert("Arquivos do Lumini 3 publicados com sucesso!");
       setNovosArquivos([]);
       setProgresso(0);
       await carregarArquivos();
@@ -330,7 +383,12 @@ export default function UploadInterface() {
           </div>
         </div>
 
-        <div className="border-2 border-dashed border-[#1E293B]/40 hover:border-[#1E293B] rounded-xl p-6 sm:p-8 text-center hover:bg-[#1E293B]/5 transition-colors relative cursor-pointer">
+        {/* Zona de Drop para Pastas e Arquivos */}
+        <div
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={handleDrop}
+          className="border-2 border-dashed border-[#1E293B]/40 hover:border-[#1E293B] rounded-xl p-6 sm:p-8 text-center hover:bg-[#1E293B]/5 transition-colors relative cursor-pointer"
+        >
           <input
             type="file"
             multiple
@@ -342,15 +400,24 @@ export default function UploadInterface() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
           </div>
-          <p className="text-sm sm:text-base text-gray-700 font-bold">Arraste os arquivos/pastas aqui ou clique para selecionar</p>
-          <p className="text-[11px] sm:text-xs text-gray-400 mt-1">Divisão automática em Feed, Story e Vídeos. Imagens convertidas para WebP.</p>
+          <p className="text-sm sm:text-base text-gray-700 font-bold">Arraste as pastas (feed, story, vídeos) ou arquivos aqui</p>
+          <p className="text-[11px] sm:text-xs text-gray-400 mt-1">Classificação automática em Feed, Story e Vídeos. Imagens convertidas para WebP.</p>
         </div>
 
         {novosArquivos.length > 0 && (
           <div className="mt-6 border-t pt-4">
-            <h3 className="text-xs sm:text-sm font-bold text-gray-700 mb-3">
-              {novosArquivos.length} arquivo(s) pronto(s) para enviar:
-            </h3>
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-xs sm:text-sm font-bold text-gray-700">
+                {novosArquivos.length} arquivo(s) pronto(s) para enviar:
+              </h3>
+              <button
+                onClick={() => setNovosArquivos([])}
+                className="text-xs text-red-500 hover:underline font-bold"
+              >
+                Limpar lista
+              </button>
+            </div>
+            
             <div className="space-y-2 max-h-48 overflow-y-auto mb-4">
               {novosArquivos.map((item, idx) => (
                 <div key={idx} className="flex justify-between items-center text-xs bg-gray-50 p-2.5 sm:p-3 rounded-lg border border-gray-200">
