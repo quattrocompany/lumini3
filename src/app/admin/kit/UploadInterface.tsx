@@ -24,6 +24,57 @@ interface ItemKit {
 // Identificador único deste empreendimento no Firebase
 const EMPREENDIMENTO_ID = "lumini-3";
 
+// Função para otimizar imagens no navegador antes do upload
+const comprimirImagem = (file: File, maxWidth = 1920, quality = 0.8): Promise<File> => {
+  return new Promise((resolve) => {
+    if (!file.type.startsWith("image/") || file.type.includes("gif") || file.type.includes("svg")) {
+      return resolve(file);
+    }
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = document.createElement("img");
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const nomeSemExtensao = file.name.substring(0, file.name.lastIndexOf(".")) || file.name;
+              const novoArquivo = new File([blob], `${nomeSemExtensao}.webp`, {
+                type: "image/webp",
+                lastModified: Date.now(),
+              });
+              resolve(novoArquivo);
+            } else {
+              resolve(file);
+            }
+          },
+          "image/webp",
+          quality
+        );
+      };
+      img.onerror = () => resolve(file);
+    };
+    reader.onerror = () => resolve(file);
+  });
+};
+
 export default function UploadInterface() {
   const [dataSelecao, setDataSelecao] = useState<string>(
     new Date().toISOString().split("T")[0]
@@ -109,7 +160,10 @@ export default function UploadInterface() {
       let concluidos = 0;
 
       for (const item of novosArquivos) {
-        const storagePath = `${EMPREENDIMENTO_ID}/${dataSelecao}/${item.categoria}/${item.file.name}`;
+        // Otimização automática de imagens
+        const arquivoParaUpload = await comprimirImagem(item.file);
+
+        const storagePath = `${EMPREENDIMENTO_ID}/${dataSelecao}/${item.categoria}/${arquivoParaUpload.name}`;
         const fileRef = ref(storage, storagePath);
 
         const metadata = {
@@ -120,15 +174,15 @@ export default function UploadInterface() {
           },
         };
 
-        const uploadTask = uploadBytesResumable(fileRef, item.file, metadata);
+        const uploadTask = uploadBytesResumable(fileRef, arquivoParaUpload, metadata);
 
         await new Promise<void>((resolve, reject) => {
           uploadTask.on(
             "state_changed",
-(snapshot: any) => {
-  const fileProgress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-  console.log(`Upload ${item.file.name}: ${fileProgress.toFixed(0)}%`);
-},
+            (snapshot: any) => {
+              const fileProgress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              console.log(`Upload ${arquivoParaUpload.name}: ${fileProgress.toFixed(0)}%`);
+            },
             (error: any) => reject(error),
             () => {
               concluidos++;
@@ -139,7 +193,7 @@ export default function UploadInterface() {
         });
       }
 
-      alert("Arquivos do Lumini 3 publicados com sucesso!");
+      alert("Arquivos do Lumini 3 otimizados e publicados com sucesso!");
       setNovosArquivos([]);
       setProgresso(0);
       await carregarArquivos();
@@ -206,7 +260,7 @@ export default function UploadInterface() {
             </svg>
           </div>
           <p className="text-gray-700 font-bold">Arraste os arquivos aqui ou clique para selecionar</p>
-          <p className="text-xs text-gray-400 mt-1">Identificação automática de ZIP, PDF, JPG e MP4.</p>
+          <p className="text-xs text-gray-400 mt-1">Imagens serão automaticamente convertidas para WebP leve.</p>
         </div>
 
         {novosArquivos.length > 0 && (
@@ -236,7 +290,7 @@ export default function UploadInterface() {
               disabled={uploading}
               className="w-full bg-[#DD6810] text-white font-bold py-3 rounded-lg hover:bg-[#c45a0d] transition-colors cursor-pointer disabled:opacity-50"
             >
-              {uploading ? `Enviando... ${progresso}%` : "Confirmar e Publicar Todos"}
+              {uploading ? `Otimizando e Enviando... ${progresso}%` : "Confirmar e Publicar Todos"}
             </button>
           </div>
         )}
