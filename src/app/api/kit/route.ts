@@ -3,29 +3,30 @@ import { storage } from "@/lib/firebase";
 import { ref, listAll, getDownloadURL, getMetadata } from "firebase/storage";
 
 export const dynamic = "force-dynamic";
-export const revalidate = 0; // Desativa o cache de dados do Next.js
+export const revalidate = 0;
 
-// Identificador do empreendimento
 const EMPREENDIMENTO_ID = "lumini-3";
 
 export async function GET() {
   try {
     const rootRef = ref(storage, EMPREENDIMENTO_ID);
 
-    const listRecursive = async (folderRef: any) => {
+    const listRecursive = async (folderRef: any): Promise<any[]> => {
       const res = await listAll(folderRef);
-      let filesList: any[] = [];
 
-      for (const folder of res.prefixes) {
-        const subFiles = await listRecursive(folder);
-        filesList = [...filesList, ...subFiles];
-      }
+      // 1. Processa subpastas em paralelo
+      const subFolderPromises = res.prefixes.map((folder) => listRecursive(folder));
+      const subFolderResults = await Promise.all(subFolderPromises);
+      const subFiles = subFolderResults.flat();
 
-      for (const itemRef of res.items) {
-        const url = await getDownloadURL(itemRef);
-        const meta = await getMetadata(itemRef);
+      // 2. Processa URL e Metadados de TODOS os arquivos da pasta em PARALELO
+      const itemPromises = res.items.map(async (itemRef) => {
+        const [url, meta] = await Promise.all([
+          getDownloadURL(itemRef),
+          getMetadata(itemRef),
+        ]);
+
         const sizeMB = (meta.size / (1024 * 1024)).toFixed(2) + " MB";
-
         const nameLower = itemRef.name.toLowerCase();
         const ext = nameLower.split(".").pop() || "";
         let categoria = meta.customMetadata?.categoria;
@@ -43,16 +44,19 @@ export async function GET() {
           }
         }
 
-        filesList.push({
+        return {
           id: itemRef.fullPath,
           nome: itemRef.name,
           categoria: categoria,
           url: url,
           tamanho: sizeMB,
           dataUpload: meta.customMetadata?.dataUpload || meta.timeCreated.split("T")[0],
-        });
-      }
-      return filesList;
+        };
+      });
+
+      const currentFiles = await Promise.all(itemPromises);
+
+      return [...subFiles, ...currentFiles];
     };
 
     const items = await listRecursive(rootRef);
