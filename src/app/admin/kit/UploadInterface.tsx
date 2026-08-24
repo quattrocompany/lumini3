@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, DragEvent } from "react";
+import { useState, useEffect, useRef, DragEvent } from "react";
 import { storage } from "@/lib/firebase";
 import {
   ref,
@@ -24,14 +24,14 @@ interface ItemKit {
 
 const EMPREENDIMENTO_ID = "lumini-3";
 
-// Compressão segura de imagem (com timeout de proteção para nunca travar o upload)
+// Compressão segura de imagem no navegador
 const comprimirImagem = (file: File, maxWidth = 1920, quality = 0.8): Promise<File> => {
   return new Promise((resolve) => {
     if (!file || file.size === 0 || !file.type.startsWith("image/") || file.type.includes("gif") || file.type.includes("svg")) {
       return resolve(file);
     }
 
-    const timer = setTimeout(() => resolve(file), 4000); // Se travar por mais de 4s, envia original
+    const timer = setTimeout(() => resolve(file), 4000);
 
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -85,6 +85,8 @@ const comprimirImagem = (file: File, maxWidth = 1920, quality = 0.8): Promise<Fi
 };
 
 export default function UploadInterface() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const [dataSelecao, setDataSelecao] = useState<string>(
     new Date().toISOString().split("T")[0]
   );
@@ -96,8 +98,9 @@ export default function UploadInterface() {
   const [loadingList, setLoadingList] = useState(true);
   const [filtroDataAdmin, setFiltroDataAdmin] = useState<string>("todas");
   const [selecionados, setSelecionados] = useState<string[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
 
-  // Detecção inteligente de categoria por caminho da pasta ou nome
+  // Detecção inteligente de categoria considerando o caminho relativo da pasta e o nome do arquivo
   const autoDetectarCategoria = (file: File, relativePath = ""): string => {
     const name = file.name.toLowerCase();
     const path = (relativePath || file.webkitRelativePath || "").toLowerCase();
@@ -119,30 +122,56 @@ export default function UploadInterface() {
     return "imagem_avulsa";
   };
 
-  // Leitor recursivo de pastas arrastadas (Drag & Drop)
-  const lerPastaRecursiva = async (entry: any, path = ""): Promise<{ file: File; path: string }[]> => {
+  // Leitor recursivo de arquivos dentro de pastas arrastadas
+  const escanearEntrada = async (entry: any, path = ""): Promise<{ file: File; relativePath: string }[]> => {
     if (entry.isFile) {
       return new Promise((resolve) => {
-        entry.file((f: File) => resolve([{ file: f, path: path + f.name }]));
+        entry.file(
+          (f: File) => {
+            if (f.size > 0) {
+              resolve([{ file: f, relativePath: path + f.name }]);
+            } else {
+              resolve([]);
+            }
+          },
+          () => resolve([])
+        );
       });
     } else if (entry.isDirectory) {
-      const reader = entry.createReader();
-      const entries: any[] = await new Promise((resolve) => reader.readEntries((e: any[]) => resolve(e)));
-      let result: { file: File; path: string }[] = [];
-      for (const child of entries) {
-        const subFiles = await lerPastaRecursiva(child, `${path}${entry.name}/`);
-        result = [...result, ...subFiles];
+      const dirReader = entry.createReader();
+      const lerTodasEntradas = async (): Promise<any[]> => {
+        let entradas: any[] = [];
+        let ler = async () => {
+          const res = await new Promise<any[]>((resolve) =>
+            dirReader.readEntries((e: any[]) => resolve(e), () => resolve([]))
+          );
+          if (res.length > 0) {
+            entradas = entradas.concat(res);
+            await ler();
+          }
+        };
+        await ler();
+        return entradas;
+      };
+
+      const entradas = await lerTodasEntradas();
+      let arquivos: { file: File; relativePath: string }[] = [];
+      for (const child of entradas) {
+        const subArquivos = await escanearEntrada(child, `${path}${entry.name}/`);
+        arquivos = [...arquivos, ...subArquivos];
       }
-      return result;
+      return arquivos;
     }
     return [];
   };
 
-  // Manipulador de Soltura de Pastas/Arquivos
+  // Evento de Drop na caixa
   const handleDrop = async (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    setIsDragging(false);
+    
     const items = e.dataTransfer.items;
-    let arquivosExtraidos: { file: File; categoria: string }[] = [];
+    let arquivosEncontrados: { file: File; categoria: string }[] = [];
 
     if (items) {
       for (let i = 0; i < items.length; i++) {
@@ -150,12 +179,12 @@ export default function UploadInterface() {
         if (item.kind === "file") {
           const entry = item.webkitGetAsEntry();
           if (entry) {
-            const filesWithPath = await lerPastaRecursiva(entry);
-            for (const f of filesWithPath) {
-              if (f.file.size > 0) { // Ignora marcadores de pasta vazia
-                arquivosExtraidos.push({
-                  file: f.file,
-                  categoria: autoDetectarCategoria(f.file, f.path),
+            const arquivosEscaneados = await escanearEntrada(entry);
+            for (const itemScanned of arquivosEscaneados) {
+              if (itemScanned.file && itemScanned.file.size > 0) {
+                arquivosEncontrados.push({
+                  file: itemScanned.file,
+                  categoria: autoDetectarCategoria(itemScanned.file, itemScanned.relativePath),
                 });
               }
             }
@@ -164,8 +193,8 @@ export default function UploadInterface() {
       }
     }
 
-    if (arquivosExtraidos.length > 0) {
-      setNovosArquivos((prev) => [...prev, ...arquivosExtraidos]);
+    if (arquivosEncontrados.length > 0) {
+      setNovosArquivos((prev) => [...prev, ...arquivosEncontrados]);
     }
   };
 
@@ -365,6 +394,15 @@ export default function UploadInterface() {
   return (
     <div className="space-y-6 sm:space-y-10">
       
+      {/* Input de Arquivo Oculto */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+
       {/* SEÇÃO 1: UPLOAD EM LOTE */}
       <div className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-6 border-b border-gray-100">
@@ -383,25 +421,32 @@ export default function UploadInterface() {
           </div>
         </div>
 
-        {/* Zona de Drop para Pastas e Arquivos */}
+        {/* Caixas de Arraste e Solte Responsiva */}
         <div
-          onDragOver={(e) => e.preventDefault()}
+          onClick={() => fileInputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragging(true);
+          }}
+          onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
-          className="border-2 border-dashed border-[#1E293B]/40 hover:border-[#1E293B] rounded-xl p-6 sm:p-8 text-center hover:bg-[#1E293B]/5 transition-colors relative cursor-pointer"
+          className={`border-2 border-dashed rounded-xl p-6 sm:p-8 text-center transition-colors cursor-pointer ${
+            isDragging
+              ? "border-[#DD6810] bg-orange-50/50"
+              : "border-[#1E293B]/40 hover:border-[#1E293B] hover:bg-[#1E293B]/5"
+          }`}
         >
-          <input
-            type="file"
-            multiple
-            onChange={handleFileSelect}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-          />
           <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#1E293B]/10 text-[#1E293B] rounded-full flex items-center justify-center mx-auto mb-3">
             <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
           </div>
-          <p className="text-sm sm:text-base text-gray-700 font-bold">Arraste as pastas (feed, story, vídeos) ou arquivos aqui</p>
-          <p className="text-[11px] sm:text-xs text-gray-400 mt-1">Classificação automática em Feed, Story e Vídeos. Imagens convertidas para WebP.</p>
+          <p className="text-sm sm:text-base text-gray-700 font-bold">
+            Arraste as pastas (feed, story, vídeos) ou arquivos aqui
+          </p>
+          <p className="text-[11px] sm:text-xs text-gray-400 mt-1">
+            Classificação automática em Feed, Story e Vídeos. Imagens convertidas para WebP.
+          </p>
         </div>
 
         {novosArquivos.length > 0 && (
@@ -412,7 +457,7 @@ export default function UploadInterface() {
               </h3>
               <button
                 onClick={() => setNovosArquivos([])}
-                className="text-xs text-red-500 hover:underline font-bold"
+                className="text-xs text-red-500 hover:underline font-bold cursor-pointer"
               >
                 Limpar lista
               </button>
