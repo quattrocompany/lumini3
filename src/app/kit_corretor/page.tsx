@@ -15,13 +15,12 @@ interface ItemKit {
 export default function KitCorretorPage() {
   const [itens, setItens] = useState<ItemKit[]>([]);
   const [dataFiltro, setDataFiltro] = useState<string>("todas");
-  const [tipoImagem, setTipoImagem] = useState<string>("todas"); // Estado para as Abas
+  const [tipoImagem, setTipoImagem] = useState<string>("todas");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function carregarKit() {
       try {
-        // Cache busting rigoroso para não trazer dados estáticos antigos
         const res = await fetch(`/api/kit?t=${new Date().getTime()}`, {
           cache: "no-store",
           headers: {
@@ -61,16 +60,22 @@ export default function KitCorretorPage() {
   const laminasPdf = itensFiltrados.filter((i) => i.categoria === "lamina_pdf");
   const videos = itensFiltrados.filter((i) => i.categoria === "video");
   
-  // Pegamos todas as imagens do banco de dados primeiro
-  const imagensBancoDeDados = itensFiltrados.filter((i) => 
-    ["imagem_avulsa", "imagem_feed", "imagem_story"].includes(i.categoria)
+  // Mídia geral da galeria (imagens + vídeos)
+  const midiasGaleria = itensFiltrados.filter((i) => 
+    ["imagem_avulsa", "imagem_feed", "imagem_story", "video"].includes(i.categoria)
   );
 
-  // Filtramos as imagens de acordo com a aba selecionada pelo corretor
-  const imagensAvulsasRenderizadas = imagensBancoDeDados.filter((i) => {
+  const midiasRenderizadas = midiasGaleria.filter((i) => {
     if (tipoImagem === "todas") return true;
     return i.categoria === tipoImagem;
   });
+
+  const rolarParaVideos = () => {
+    const elemento = document.getElementById("secao-videos");
+    if (elemento) {
+      elemento.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col justify-between">
@@ -143,12 +148,11 @@ export default function KitCorretorPage() {
               <p className="text-sm text-gray-500 mb-6 flex-1">Tabela de vendas oficial com fluxos de pagamento e valores das unidades.</p>
               <a
                 href="/pdf/TABELA_LUMINI3_190826.pdf"
-                download
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full bg-[#DD6810] text-white font-bold py-3 rounded-full hover:bg-[#c0590a] transition-colors text-sm text-center"
               >
-                Baixar Tabela (.PDF)
+                Visualizar e Baixar
               </a>
             </div>
 
@@ -182,8 +186,13 @@ export default function KitCorretorPage() {
               <h3 className="text-xl font-bold text-gray-800 mb-2">Lâmina e Plantas</h3>
               <p className="text-sm text-gray-500 mb-6 flex-1">Apresentação comercial e todas as plantas baixas cotadas.</p>
               {laminasPdf.length > 0 ? (
-                <a href={laminasPdf[0].url} download className="w-full bg-[#8810dd] text-white font-bold py-3 rounded-full hover:bg-[#590dc4] transition-colors text-sm text-center">
-                  Baixar Caderno (.PDF)
+                <a 
+                  href={laminasPdf[0].url} 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-[#8810dd] text-white font-bold py-3 rounded-full hover:bg-[#590dc4] transition-colors text-sm text-center"
+                >
+                  Visualizar e Baixar
                 </a>
               ) : (
                 <button disabled className="w-full bg-gray-200 text-gray-400 font-bold py-3 rounded-full text-sm cursor-not-allowed">
@@ -192,7 +201,7 @@ export default function KitCorretorPage() {
               )}
             </div>
 
-            {/* Box 4: VÍDEOS */}
+            {/* Box 4: VÍDEOS (DIRECIONA PARA A SEÇÃO DE VÍDEOS) */}
             <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-shadow flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-[#1E293B]/10 text-[#1E293B] rounded-full flex items-center justify-center mb-6">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -202,17 +211,65 @@ export default function KitCorretorPage() {
               </div>
               <h3 className="text-xl font-bold text-gray-800 mb-2">Vídeos e Reels</h3>
               <p className="text-sm text-gray-500 mb-6 flex-1">Vídeos promocionais prontos para postar no Instagram e WhatsApp.</p>
-              {videos.length > 0 ? (
-                <a href={videos[0].url} download className="w-full bg-[#1E293B] text-white font-bold py-3 rounded-full hover:bg-[#0f172a] transition-colors text-sm text-center">
-                  Baixar Vídeos (.MP4)
-                </a>
-              ) : (
-                <button disabled className="w-full bg-gray-200 text-gray-400 font-bold py-3 rounded-full text-sm cursor-not-allowed">
-                  Indisponível
-                </button>
-              )}
+              <button
+                onClick={rolarParaVideos}
+                className="w-full bg-[#1E293B] text-white font-bold py-3 rounded-full hover:bg-[#0f172a] transition-colors text-sm text-center cursor-pointer"
+              >
+                Ver Vídeos (.MP4)
+              </button>
             </div>
 
+          </div>
+
+          {/* SEÇÃO DEDICADA DE VÍDEOS */}
+          <div id="secao-videos" className="mt-20 border-t border-gray-200 pt-16 scroll-mt-6">
+            <div className="text-center sm:text-left mb-8">
+              <h2 className="text-2xl md:text-3xl font-bold text-[#1E293B] uppercase tracking-wide">
+                Vídeos e Reels
+              </h2>
+              <p className="text-gray-500 text-sm mt-1">Assista ou baixe os vídeos promocionais para postar nas suas redes sociais.</p>
+            </div>
+
+            {loading ? (
+              <p className="text-center py-8 text-gray-400 font-medium">Carregando vídeos...</p>
+            ) : videos.length === 0 ? (
+              <div className="text-center py-12 bg-white border border-gray-200 rounded-2xl shadow-sm">
+                <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                <p className="text-gray-500 font-medium">Nenhum vídeo publicado no momento.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {videos.map((vid) => (
+                  <div key={vid.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col justify-between">
+                    <div className="relative aspect-[9/16] bg-black">
+                      <video
+                        src={vid.url}
+                        controls
+                        preload="metadata"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-4 flex flex-col gap-3">
+                      <span className="text-xs font-bold text-gray-800 truncate" title={vid.nome}>
+                        {vid.nome}
+                      </span>
+                      <a
+                        href={vid.url}
+                        download
+                        className="w-full bg-[#1E293B] hover:bg-[#0c82a0] text-white text-xs font-bold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Baixar Vídeo ({vid.tamanho})
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* GALERIA DE IMAGENS AVULSAS COM ABAS */}
@@ -228,25 +285,31 @@ export default function KitCorretorPage() {
               {datasDisponiveis.length > 0 && (
                 <div className="flex flex-col sm:flex-row items-end sm:items-center gap-4">
                   
-                  {/* ABAS DE CATEGORIA */}
+                  {/* ABAS DE CATEGORIA (INCLUI VÍDEOS) */}
                   <div className="flex items-center bg-gray-100 p-1 rounded-lg">
                     <button 
                       onClick={() => setTipoImagem("todas")}
-                      className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${tipoImagem === "todas" ? "bg-white shadow-sm text-[#DD6810]" : "text-gray-500 hover:text-gray-700"}`}
+                      className={`px-3.5 py-1.5 text-xs font-bold rounded-md transition-all ${tipoImagem === "todas" ? "bg-white shadow-sm text-[#DD6810]" : "text-gray-500 hover:text-gray-700"}`}
                     >
                       Todas
                     </button>
                     <button 
                       onClick={() => setTipoImagem("imagem_feed")}
-                      className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${tipoImagem === "imagem_feed" ? "bg-white shadow-sm text-[#DD6810]" : "text-gray-500 hover:text-gray-700"}`}
+                      className={`px-3.5 py-1.5 text-xs font-bold rounded-md transition-all ${tipoImagem === "imagem_feed" ? "bg-white shadow-sm text-[#DD6810]" : "text-gray-500 hover:text-gray-700"}`}
                     >
                       Feed
                     </button>
                     <button 
                       onClick={() => setTipoImagem("imagem_story")}
-                      className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${tipoImagem === "imagem_story" ? "bg-white shadow-sm text-[#DD6810]" : "text-gray-500 hover:text-gray-700"}`}
+                      className={`px-3.5 py-1.5 text-xs font-bold rounded-md transition-all ${tipoImagem === "imagem_story" ? "bg-white shadow-sm text-[#DD6810]" : "text-gray-500 hover:text-gray-700"}`}
                     >
                       Story
+                    </button>
+                    <button 
+                      onClick={() => setTipoImagem("video")}
+                      className={`px-3.5 py-1.5 text-xs font-bold rounded-md transition-all ${tipoImagem === "video" ? "bg-white shadow-sm text-[#DD6810]" : "text-gray-500 hover:text-gray-700"}`}
+                    >
+                      Vídeos
                     </button>
                   </div>
 
@@ -269,37 +332,41 @@ export default function KitCorretorPage() {
             </div>
 
             {loading ? (
-              <p className="text-center py-10 text-gray-400 font-medium">Procurando imagens do servidor...</p>
-            ) : imagensAvulsasRenderizadas.length === 0 ? (
+              <p className="text-center py-10 text-gray-400 font-medium">Procurando arquivos no servidor...</p>
+            ) : midiasRenderizadas.length === 0 ? (
               <div className="text-center py-16 bg-white border border-gray-200 rounded-2xl shadow-sm">
                 <svg className="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <p className="text-gray-500 font-medium">Nenhuma imagem avulsa encontrada para esta versão/filtro.</p>
-                <p className="text-gray-400 text-sm mt-1">Quando houver imagens, elas aparecerão aqui automaticamente.</p>
+                <p className="text-gray-500 font-medium">Nenhum arquivo encontrado para esta categoria/versão.</p>
+                <p className="text-gray-400 text-sm mt-1">Quando houver mídias publicadas, elas aparecerão aqui automaticamente.</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-                {imagensAvulsasRenderizadas.map((img) => (
-                  <div key={img.id} className="group relative aspect-[9/16] rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-gray-200 bg-gray-100">
-                    <Image
-                      src={img.url}
-                      alt={img.nome}
-                      fill
-                      unoptimized
-                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 20vw"
-                      className="object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
+                {midiasRenderizadas.map((item) => (
+                  <div key={item.id} className="group relative aspect-[9/16] rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-gray-200 bg-gray-100">
+                    {item.categoria === "video" ? (
+                      <video src={item.url} controls className="w-full h-full object-cover" />
+                    ) : (
+                      <Image
+                        src={item.url}
+                        alt={item.nome}
+                        fill
+                        unoptimized
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 20vw"
+                        className="object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                    )}
                     
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-4">
                       <span className="text-white font-bold mb-4 text-center text-xs md:text-sm px-2 truncate w-full">
-                        {img.nome}
+                        {item.nome}
                       </span>
                       <a
-                        href={img.url}
+                        href={item.url}
                         download
                         className="bg-[#DD6810] text-white p-3 rounded-full hover:bg-white hover:text-[#8810dd] transition-colors transform hover:scale-110 shadow-lg"
-                        title={`Baixar ${img.nome}`}
+                        title={`Baixar ${item.nome}`}
                       >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -318,11 +385,9 @@ export default function KitCorretorPage() {
       {/* RODAPÉ E CONTATOS LUMINI */}
       <div className="w-full mt-16 md:mt-24 flex flex-col">
         
-        {/* Bloco de Informações - Roxo Escuro (#310b65) */}
         <div className="w-full bg-[#310b65] py-16 px-6 text-center text-white">
           <div className="max-w-3xl mx-auto flex flex-col items-center">
             
-            {/* LOGO EM VEZ DO TEXTO LUMINI */}
             <div className="relative w-48 sm:w-64 h-16 md:h-20 mb-4">
               <Image
                 src="/img/logowhite.png"
@@ -337,7 +402,6 @@ export default function KitCorretorPage() {
             </p>
             
             <div className="flex flex-col sm:flex-row items-center gap-4 justify-center">
-              {/* Botão Site */}
               <a
                 href="https://www.lumini3.com.br"
                 target="_blank"
@@ -350,7 +414,6 @@ export default function KitCorretorPage() {
                 Acessar Site Oficial
               </a>
 
-              {/* Redes Sociais */}
               <div className="flex items-center gap-3 mt-2 sm:mt-0">
                 <a href="https://www.instagram.com/lumini3residencial" target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-white/10 hover:bg-[#DD6810] flex items-center justify-center transition-all hover:scale-110 shadow-lg" title="Instagram">
                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -367,7 +430,6 @@ export default function KitCorretorPage() {
           </div>
         </div>
 
-        {/* Imagem do Rodapé - Proporção Natural Full Width */}
         <div className="w-full relative">
           <Image
             src="/img/rodapé_corretor.jpg"
@@ -380,7 +442,6 @@ export default function KitCorretorPage() {
           />
         </div>
 
-        {/* BARRA DE DIREITOS */}
         <div className="w-full bg-[#ffffff] py-8 px-6 text-center text-white relative z-10">
           <p className="text-xs sm:text-sm font-bold tracking-wide text-[#8810dd]">
             Quattro Inc © 2026 Lumini Clube Residencial | Termos de Uso e Política de Privacidade
