@@ -24,9 +24,11 @@ interface ItemKit {
 
 const EMPREENDIMENTO_ID = "lumini-3";
 
+// Compressão ignora instantaneamente PDFs, ZIPs e Vídeos (não trava o upload)
 const comprimirImagem = (file: File, maxWidth = 1920, quality = 0.8): Promise<File> => {
   return new Promise((resolve) => {
-    if (!file || file.size === 0 || !file.type.startsWith("image/") || file.type.includes("gif") || file.type.includes("svg")) {
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
+    if (!["jpg", "jpeg", "png", "webp"].includes(ext)) {
       return resolve(file);
     }
 
@@ -93,6 +95,7 @@ export default function UploadInterface() {
   const [itensCadastrados, setItensCadastrados] = useState<ItemKit[]>([]);
   const [novosArquivos, setNovosArquivos] = useState<{ file: File; categoria: string }[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [statusTexto, setStatusTexto] = useState<string>("");
   const [progresso, setProgresso] = useState<number>(0);
   const [loadingList, setLoadingList] = useState(true);
   const [filtroDataAdmin, setFiltroDataAdmin] = useState<string>("todas");
@@ -106,7 +109,6 @@ export default function UploadInterface() {
 
     if (ext === "zip" || ext === "rar") return "pacote_zip";
     
-    // Identificação de PDFs (Tabela vs Book/Lâmina)
     if (ext === "pdf") {
       if (name.includes("tabela") || path.includes("tabela")) return "tabela_precos";
       return "lamina_pdf";
@@ -264,7 +266,11 @@ export default function UploadInterface() {
       const totalArquivos = novosArquivos.length;
       let concluidos = 0;
 
-      for (const item of novosArquivos) {
+      for (let i = 0; i < novosArquivos.length; i++) {
+        const item = novosArquivos[i];
+        const tamanhoMB = (item.file.size / (1024 * 1024)).toFixed(1);
+        setStatusTexto(`Enviando (${i + 1}/${totalArquivos}): "${item.file.name}" (${tamanhoMB} MB)...`);
+
         const arquivoParaUpload = await comprimirImagem(item.file);
         const storagePath = `${EMPREENDIMENTO_ID}/${dataSelecao}/${item.categoria}/${arquivoParaUpload.name}`;
         const fileRef = ref(storage, storagePath);
@@ -284,7 +290,9 @@ export default function UploadInterface() {
             "state_changed",
             (snapshot: any) => {
               const fileProgress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-              console.log(`Upload ${arquivoParaUpload.name}: ${fileProgress.toFixed(0)}%`);
+              setStatusTexto(
+                `Enviando (${i + 1}/${totalArquivos}): "${item.file.name}" - ${fileProgress.toFixed(0)}%`
+              );
             },
             (error: any) => reject(error),
             () => {
@@ -299,12 +307,14 @@ export default function UploadInterface() {
       alert("Arquivos do Lumini 3 publicados com sucesso!");
       setNovosArquivos([]);
       setProgresso(0);
+      setStatusTexto("");
       await carregarArquivos();
     } catch (err: any) {
       console.error("Falha no upload:", err);
-      alert(`Atenção: ${err.message || "Erro ao realizar o upload."}`);
+      alert(`Atenção ao enviar: ${err.message || "Erro no upload."}`);
     } finally {
       setUploading(false);
+      setStatusTexto("");
     }
   };
 
@@ -416,7 +426,7 @@ export default function UploadInterface() {
               type="date"
               value={dataSelecao}
               onChange={(e) => setDataSelecao(e.target.value)}
-              className="px-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg text-xs sm:text-sm font-bold text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#1E293B]"
+              className="px-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg text-xs sm:text-sm font-bold text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#DD6810]"
             />
           </div>
         </div>
@@ -431,11 +441,11 @@ export default function UploadInterface() {
           onDrop={handleDrop}
           className={`border-2 border-dashed rounded-xl p-6 sm:p-8 text-center transition-colors cursor-pointer ${
             isDragging
-              ? "border-[#DD6810] bg-orange-50/50"
-              : "border-[#1E293B]/40 hover:border-[#1E293B] hover:bg-[#1E293B]/5"
+              ? "border-[#DD6810] bg-[#DD6810]/5"
+              : "border-[#1E293B]/40 hover:border-[#DD6810] hover:bg-[#DD6810]/5"
           }`}
         >
-          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#1E293B]/10 text-[#1E293B] rounded-full flex items-center justify-center mx-auto mb-3">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#DD6810]/10 text-[#DD6810] rounded-full flex items-center justify-center mx-auto mb-3">
             <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
@@ -462,16 +472,43 @@ export default function UploadInterface() {
               </button>
             </div>
             
-            <div className="space-y-2 max-h-48 overflow-y-auto mb-4">
+            {/* Seletor Manual Adicionado */}
+            <div className="space-y-2 max-h-56 overflow-y-auto mb-4">
               {novosArquivos.map((item, idx) => (
-                <div key={idx} className="flex justify-between items-center text-xs bg-gray-50 p-2.5 sm:p-3 rounded-lg border border-gray-200">
-                  <span className="font-semibold text-gray-700 truncate max-w-[200px] sm:max-w-xs">{item.file.name}</span>
-                  <span className="bg-[#1E293B] text-white px-2 py-0.5 sm:py-1 rounded text-[9px] sm:text-[10px] font-bold uppercase whitespace-nowrap">
-                    {item.categoria.replace("_", " ")}
-                  </span>
+                <div key={idx} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs bg-gray-50 p-2.5 sm:p-3 rounded-lg border border-gray-200">
+                  <div className="flex items-center gap-2 truncate max-w-md">
+                    <span className="font-semibold text-gray-700 truncate">{item.file.name}</span>
+                    <span className="text-[10px] text-gray-400 shrink-0">
+                      ({(item.file.size / (1024 * 1024)).toFixed(1)} MB)
+                    </span>
+                  </div>
+                  <select
+                    value={item.categoria}
+                    onChange={(e) => {
+                      const novaCat = e.target.value;
+                      setNovosArquivos((prev) =>
+                        prev.map((f, i) => (i === idx ? { ...f, categoria: novaCat } : f))
+                      );
+                    }}
+                    className="px-2 py-1 text-[11px] font-bold uppercase rounded border border-gray-300 bg-white text-gray-700 focus:outline-none focus:border-[#DD6810] cursor-pointer"
+                  >
+                    <option value="tabela_precos">Tabela de Preços</option>
+                    <option value="lamina_pdf">Book / Lâmina PDF</option>
+                    <option value="imagem_feed">Imagem Feed</option>
+                    <option value="imagem_story">Imagem Story</option>
+                    <option value="imagem_avulsa">Imagem Avulsa</option>
+                    <option value="video">Vídeo</option>
+                    <option value="pacote_zip">Pacote ZIP</option>
+                  </select>
                 </div>
               ))}
             </div>
+
+            {statusTexto && (
+              <p className="text-xs font-bold text-[#DD6810] mb-2 animate-pulse truncate">
+                {statusTexto}
+              </p>
+            )}
 
             {uploading && (
               <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
@@ -482,9 +519,9 @@ export default function UploadInterface() {
             <button
               onClick={handleUpload}
               disabled={uploading}
-              className="w-full bg-[#DD6810] text-white font-bold py-2.5 sm:py-3 text-xs sm:text-sm rounded-lg hover:bg-[#c45a0d] transition-colors cursor-pointer disabled:opacity-50"
+              className="w-full bg-[#DD6810] hover:bg-[#c45a0d] text-white font-bold py-2.5 sm:py-3 text-xs sm:text-sm rounded-lg transition-colors cursor-pointer disabled:opacity-50"
             >
-              {uploading ? `Otimizando e Enviando... ${progresso}%` : "Confirmar e Publicar Todos"}
+              {uploading ? `Enviando... ${progresso}%` : "Confirmar e Publicar Todos"}
             </button>
           </div>
         )}
@@ -592,7 +629,7 @@ export default function UploadInterface() {
                         </a>
                       </td>
                       <td className="p-3">
-                        <span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase whitespace-nowrap">
+                        <span className="bg-[#DD6810]/10 text-[#DD6810] px-2 py-0.5 rounded text-[10px] font-bold uppercase whitespace-nowrap">
                           {item.categoria.replace("_", " ")}
                         </span>
                       </td>
