@@ -147,7 +147,7 @@ export default function SecaoMobilidadeUrbana() {
               Veja pelo Waze
             </a>
             <a 
-              href="https://goo.gl/maps/x8Q8Q8Q8Q8Q8Q8Q8" 
+              href="https://www.google.com/maps/dir//''/data=!4m7!4m6!1m1!4e2!1m2!1m1!1s0x94cf01852b4d84c3:0xe3c100709d2167dd!3e0?g_mp=CiVnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLkdldFBsYWNlEAMYASAF" 
               target="_blank"
               rel="noopener noreferrer"
               className="bg-white hover:bg-gray-50 text-gray-800 text-sm font-semibold py-2.5 px-6 rounded-full flex items-center justify-center gap-2 shadow-lg border border-gray-200 transition-transform hover:scale-105 w-full sm:w-auto"
