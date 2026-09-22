@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
 import { useRouter } from "next/navigation";
+import { getTrackingPayload } from "@/lib/exentTracking";
 
 export default function SecaoContato() {
   const router = useRouter();
@@ -111,6 +112,7 @@ export default function SecaoContato() {
       captcha: captchaToken,
       via: "formulario",
       utms: utms,
+      tracking: getTrackingPayload(),
     };
 
     try {
