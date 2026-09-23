@@ -6,10 +6,28 @@ export const dynamic = "force-dynamic";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Campos aceitos do Exent Tracking (mesmos nomes dos inputs ocultos do plugin WordPress)
+const TRACKING_KEYS = [
+  "utm_source", "utm_medium", "utm_campaign", "utm_id", "utm_content", "utm_term",
+  "campaignsource", "campaignmedium", "campaignid", "adgroupid", "keyword", "creative",
+  "adposition", "matchtype", "network", "device", "gclid", "gbraid", "wbraid",
+  "__utmzz", "exhub_media",
+];
+
+function pickTracking(tracking: unknown): Record<string, string> {
+  if (!tracking || typeof tracking !== "object") return {};
+  const result: Record<string, string> = {};
+  for (const key of TRACKING_KEYS) {
+    const value = (tracking as Record<string, unknown>)[key];
+    if (typeof value === "string" && value.trim()) result[key] = value.trim().slice(0, 500);
+  }
+  return result;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { nome, email, telefone, mensagem, captcha, via, utms } = body;
+    const { nome, email, telefone, mensagem, captcha, via, utms, tracking } = body;
 
     console.log(">>> NOVO LEAD LUMINI 3 RECEBIDO:", { nome, email, telefone, via, utms });
 
@@ -126,6 +144,8 @@ export async function POST(request: Request) {
         gclid: utms?.gclid || "",
         gbraid: utms?.gbraid || "",
         wbraid: utms?.wbraid || "",
+        // Dados do Exent Tracking (src/lib/exentTracking.ts); quando presentes, têm prioridade sobre `utms`
+        ...pickTracking(tracking),
       };
 
       const webhookRes = await fetch(webhookUrl, {
