@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { isAdminAuthenticated } from "@/lib/adminAuth";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request) {
+export async function GET() {
   try {
-    const body = await request.json();
-    const { senha } = body;
-
-    if (senha !== "Lumini2026!") {
-      return NextResponse.json({ error: "Senha incorreta." }, { status: 401 });
+    if (!(await isAdminAuthenticated())) {
+      return NextResponse.json({ error: "Não autorizado. Faça login novamente." }, { status: 401 });
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
