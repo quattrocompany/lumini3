@@ -1,11 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-
-// Usuários e senhas autorizados
-const VALID_USERS: Record<string, string> = {
-  vendrix: "GAuys87H98*71ts",
-  marketing: "Ricco9885*",
-};
+import { ADMIN_SESSION_COOKIE, createAdminSessionToken, verifyAdminCredentials } from "@/lib/adminAuth";
 
 export async function POST(request: Request) {
   try {
@@ -18,11 +13,19 @@ export async function POST(request: Request) {
       username = username.split("@")[0];
     }
 
-    // Valida se o usuário existe e a senha corresponde
-    if (username && VALID_USERS[username] === password) {
+    if (!username || !password) {
+      return NextResponse.json(
+        { success: false, message: "Usuário ou senha incorretos." },
+        { status: 401 }
+      );
+    }
+
+    const authenticatedUser = verifyAdminCredentials(username, password);
+
+    if (authenticatedUser) {
       const cookieStore = await cookies();
 
-      cookieStore.set("admin_session", "autenticado", {
+      cookieStore.set(ADMIN_SESSION_COOKIE, createAdminSessionToken(authenticatedUser), {
         path: "/",
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",

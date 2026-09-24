@@ -1,8 +1,13 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
+import { isAdminAuthenticatedFromRequest } from "@/lib/adminAuth";
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
+    if (!isAdminAuthenticatedFromRequest(request)) {
+      return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+    }
+
     const body = (await request.json()) as HandleUploadBody;
 
     const jsonResponse = await handleUpload({

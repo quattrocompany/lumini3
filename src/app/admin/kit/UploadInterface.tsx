@@ -1,14 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef, DragEvent } from "react";
-import { storage } from "@/lib/firebase";
-import {
-  ref,
-  uploadBytesResumable,
-  getDownloadURL,
-  listAll,
-  deleteObject,
-} from "firebase/storage";
 
 interface ItemKit {
   id: string;
@@ -19,8 +11,6 @@ interface ItemKit {
   dataUpload: string;
   fullPath: string;
 }
-
-const EMPREENDIMENTO_ID = "lumini-3";
 
 // Compressão ignora instantaneamente PDFs, ZIPs e Vídeos (não trava o upload)
 const comprimirImagem = (file: File, maxWidth = 1920, quality = 0.8): Promise<File> => {
@@ -211,60 +201,19 @@ export default function UploadInterface() {
     }
   };
 
-  // LEITURA ULTRARRÁPIDA (Sem Metadados Lentos)
+  // Lista os arquivos publicados via rota autenticada no servidor (não fala
+  // mais direto com o Firebase a partir do navegador).
   const carregarArquivos = async () => {
     setLoadingList(true);
     try {
-      const rootRef = ref(storage, EMPREENDIMENTO_ID);
-      const listRecursive = async (folderRef: any): Promise<ItemKit[]> => {
-        const res = await listAll(folderRef);
-        let filesList: ItemKit[] = [];
-
-        for (const folder of res.prefixes) {
-          const subFiles = await listRecursive(folder);
-          filesList = [...filesList, ...subFiles];
-        }
-
-        const itemPromises = res.items.map(async (itemRef) => {
-          const url = await getDownloadURL(itemRef);
-          
-          // Extrai os dados puramente do caminho: lumini-3/DATA/CATEGORIA/nome
-          const pathParts = itemRef.fullPath.split("/");
-          const dataUpload = pathParts.length >= 3 ? pathParts[1] : "Data Desconhecida";
-          const pastaCategoria = pathParts.length >= 4 ? pathParts[2] : "";
-
-          const ext = itemRef.name.split(".").pop()?.toLowerCase() || "";
-          let categoriaFinal = pastaCategoria;
-
-          if (!categoriaFinal || categoriaFinal === "undefined") {
-            if (ext === "zip" || ext === "rar") categoriaFinal = "pacote_zip";
-            else if (ext === "pdf") {
-              if (itemRef.name.toLowerCase().includes("tabela")) categoriaFinal = "tabela_precos";
-              else categoriaFinal = "lamina_pdf";
-            }
-            else if (["mp4", "mov"].includes(ext)) categoriaFinal = "video";
-            else categoriaFinal = "imagem_avulsa";
-          }
-
-          return {
-            id: itemRef.fullPath,
-            nome: itemRef.name,
-            categoria: categoriaFinal,
-            url: url,
-            tamanho: "Ver no Servidor", // Placeholder para evitar gargalo de metadados
-            dataUpload: dataUpload,
-            fullPath: itemRef.fullPath,
-          };
-        });
-
-        const itemsLidos = await Promise.all(itemPromises);
-        filesList = [...filesList, ...itemsLidos];
-        
-        return filesList;
-      };
-
-      const todos = await listRecursive(rootRef);
-      setItensCadastrados(todos);
+      const res = await fetch("/api/admin/kit/list");
+      if (res.status === 401) {
+        window.location.replace("/admin");
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erro ao carregar arquivos.");
+      setItensCadastrados(data.items || []);
     } catch (e) {
       console.error("Erro ao carregar arquivos do Firebase:", e);
     } finally {
@@ -275,6 +224,29 @@ export default function UploadInterface() {
   useEffect(() => {
     carregarArquivos();
   }, []);
+
+  // Faz o upload em duas etapas: 1) pede ao servidor (autenticado) uma URL
+  // assinada e de curta duração para o caminho exato do arquivo; 2) envia o
+  // arquivo direto para o Cloud Storage usando essa URL (mantém suporte a
+  // arquivos grandes, sem passar pelo limite de corpo da função serverless).
+  const enviarArquivoComProgresso = (uploadUrl: string, file: File, onProgress: (pct: number) => void) => {
+    return new Promise<void>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("PUT", uploadUrl, true);
+      xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          onProgress((event.loaded / event.total) * 100);
+        }
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) resolve();
+        else reject(new Error(`Falha no upload (status ${xhr.status}).`));
+      };
+      xhr.onerror = () => reject(new Error("Falha de rede durante o upload."));
+      xhr.send(file);
+    });
+  };
 
   const handleUpload = async () => {
     if (novosArquivos.length === 0) return;
@@ -291,29 +263,32 @@ export default function UploadInterface() {
         setStatusTexto(`Enviando (${i + 1}/${totalArquivos}): "${item.file.name}" (${tamanhoMB} MB)...`);
 
         const arquivoParaUpload = await comprimirImagem(item.file);
-        // O caminho força a estrutura rígida de dados que acelera a leitura!
-        const storagePath = `${EMPREENDIMENTO_ID}/${dataSelecao}/${item.categoria}/${arquivoParaUpload.name}`;
-        const fileRef = ref(storage, storagePath);
 
-        const uploadTask = uploadBytesResumable(fileRef, arquivoParaUpload);
-
-        await new Promise<void>((resolve, reject) => {
-          uploadTask.on(
-            "state_changed",
-            (snapshot: any) => {
-              const fileProgress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-              setStatusTexto(
-                `Enviando (${i + 1}/${totalArquivos}): "${item.file.name}" - ${fileProgress.toFixed(0)}%`
-              );
-            },
-            (error: any) => reject(error),
-            () => {
-              concluidos++;
-              setProgresso(Math.round((concluidos / totalArquivos) * 100));
-              resolve();
-            }
-          );
+        const prepRes = await fetch("/api/admin/kit/upload-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: arquivoParaUpload.name,
+            contentType: arquivoParaUpload.type || "application/octet-stream",
+            data: dataSelecao,
+            categoria: item.categoria,
+          }),
         });
+
+        if (prepRes.status === 401) {
+          window.location.replace("/admin");
+          return;
+        }
+
+        const prepData = await prepRes.json();
+        if (!prepRes.ok) throw new Error(prepData.error || "Não foi possível preparar o upload.");
+
+        await enviarArquivoComProgresso(prepData.uploadUrl, arquivoParaUpload, (pct) => {
+          setStatusTexto(`Enviando (${i + 1}/${totalArquivos}): "${item.file.name}" - ${pct.toFixed(0)}%`);
+        });
+
+        concluidos++;
+        setProgresso(Math.round((concluidos / totalArquivos) * 100));
       }
 
       alert("Arquivos do Lumini 3 publicados com sucesso!");
@@ -330,11 +305,24 @@ export default function UploadInterface() {
     }
   };
 
+  const excluirNoServidor = async (paths: string[]) => {
+    const res = await fetch("/api/admin/kit/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paths }),
+    });
+    if (res.status === 401) {
+      window.location.replace("/admin");
+      throw new Error("Sessão expirada.");
+    }
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Erro ao excluir arquivo(s).");
+  };
+
   const handleDeletar = async (fullPath: string) => {
     if (confirm("Tem certeza que deseja apagar este arquivo do Firebase?")) {
       try {
-        const fileRef = ref(storage, fullPath);
-        await deleteObject(fileRef);
+        await excluirNoServidor([fullPath]);
         alert("Arquivo excluído com sucesso!");
         setSelecionados((prev) => prev.filter((p) => p !== fullPath));
         await carregarArquivos();
@@ -349,10 +337,7 @@ export default function UploadInterface() {
     if (confirm(`Tem certeza que deseja excluir os ${selecionados.length} arquivo(s) selecionado(s)?`)) {
       setLoadingList(true);
       try {
-        for (const fullPath of selecionados) {
-          const fileRef = ref(storage, fullPath);
-          await deleteObject(fileRef);
-        }
+        await excluirNoServidor(selecionados);
         alert("Arquivos excluídos com sucesso!");
         setSelecionados([]);
         await carregarArquivos();

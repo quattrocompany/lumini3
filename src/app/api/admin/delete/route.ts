@@ -1,8 +1,13 @@
 import { del } from "@vercel/blob";
 import { NextResponse } from "next/server";
+import { isAdminAuthenticatedFromRequest } from "@/lib/adminAuth";
 
 export async function POST(request: Request) {
   try {
+    if (!isAdminAuthenticatedFromRequest(request)) {
+      return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+    }
+
     const { url } = await request.json();
     const token = process.env.BLOB_READ_WRITE_TOKEN;
 
