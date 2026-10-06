@@ -12,7 +12,7 @@ export default function SecaoAerea() {
         {/* Valor Mobile - Centralizado, visível apenas no mobile (desktop já possui no banner) */}
         <div className="w-full md:hidden flex justify-center mb-6 px-4 relative z-20 pt-1 pb-4">
           <Image 
-            src="/img/valor-1.png" 
+            src="/img/valor-1-novo.png" 
             alt="Valor Especial" 
             width={600} 
             height={183} 

@@ -23,7 +23,7 @@ export default function SecaoBanner() {
         {/* Imagem Desktop */}
         <div className="hidden md:flex w-full max-w-[1920px] justify-center items-end">
           <Image 
-            src="/img/Banner_Principal_Dogs.png" 
+            src="/img/Banner_Principal_Dogs_Lumini3.png" 
             alt="Lumini 3 - A família cresceu! Agora com 3 Dorms." 
             width={1920} 
             height={1080} 
